@@ -83,12 +83,13 @@ const speakers = speakersData as Speaker[];
     </div>
   </section>
 
-  <section id="timeline-section" class="timeline-section" aria-label="Tu agenda" hidden>
+  <section id="calendar-section" class="calendar-section" aria-label="Tu agenda visual" hidden>
     <div class="container">
-      <header class="ts-head">
-        <h2 class="ts-title">Cronológicamente</h2>
+      <header class="cs-head-mini">
+        <h2 class="cs-title-mini">Tu día</h2>
+        <p class="cs-hint">tocá un bloque para ver el detalle</p>
       </header>
-      <ol id="timeline-list" class="timeline-list"></ol>
+      <div id="mini-calendar" class="mini-calendar"></div>
     </div>
   </section>
 
@@ -319,19 +320,30 @@ const speakers = speakersData as Speaker[];
       `;
     }
 
-    function renderTimeline(list) {
-      const section = document.getElementById('timeline-section');
-      const ol = document.getElementById('timeline-list');
-      if (!section || !ol) return;
+    function timeToMin(iso) {
+      const time = iso.split('T')[1];
+      const [h, m] = time.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function renderMiniCalendar(list) {
+      const section = document.getElementById('calendar-section');
+      const grid = document.getElementById('mini-calendar');
+      if (!section || !grid) return;
 
       if (list.length === 0) {
         section.hidden = true;
         return;
       }
       section.hidden = false;
-      ol.innerHTML = '';
 
-      // Compute conflict membership for highlighting
+      const PX_PER_MIN = 2;
+      const starts = list.map((s) => timeToMin(s.inicio));
+      const ends = list.map((s) => timeToMin(s.fin));
+      const minT = Math.floor(Math.min(...starts) / 60) * 60;
+      const maxT = Math.ceil(Math.max(...ends) / 60) * 60;
+      const height = (maxT - minT) * PX_PER_MIN;
+
       const pairs = findConflictPairs(list);
       const inConflict = new Set();
       for (const [a, b] of pairs) {
@@ -339,71 +351,54 @@ const speakers = speakersData as Speaker[];
         inConflict.add(b.id);
       }
 
-      const tipoLabel = {
-        acreditacion: 'Acreditación',
-        talk: 'Talk',
-        panel: 'Panel',
-        keynote: 'Keynote',
-        workshop: 'Workshop',
-        break: 'Break',
-        cierre: 'Cierre',
-      };
+      const hours = [];
+      for (let h = minT; h <= maxT; h += 60) hours.push(h);
 
-      for (let i = 0; i < list.length; i++) {
-        const s = list[i];
-        const speakers = speakersInline(s, 3);
-        const dur = durationMin(s);
-        const isConf = inConflict.has(s.id);
-        const conflictBadge = isConf ? `<span class="tl-conflict">⚠ conflicto</span>` : '';
+      const ticksHtml = hours
+        .map((h, i) => {
+          const top = (h - minT) * PX_PER_MIN;
+          const label = `${String(Math.floor(h / 60)).padStart(2, '0')}:00`;
+          const cls =
+            i === 0 ? 'mc-tick mc-tick-first' : i === hours.length - 1 ? 'mc-tick mc-tick-last' : 'mc-tick';
+          return `<span class="${cls}" style="top:${top}px;">${label}</span>`;
+        })
+        .join('');
 
-        const li = document.createElement('li');
-        li.className = `tl-item sala-${s.sala}` + (isConf ? ' is-conflict' : '');
-        li.innerHTML = `
-          <div class="tl-time">
-            <span class="tl-start">${escapeHtml(s.inicio.slice(11, 16))}</span>
-            <span class="tl-dur">${escapeHtml(fmtDuration(dur))}</span>
-          </div>
-          <div class="tl-bar" aria-hidden="true"></div>
-          <article class="tl-card">
-            <header class="tlc-head">
-              <span class="tlc-sala">${escapeHtml(SALA_NOMBRE_JS[s.sala])}</span>
-              <span class="tlc-tipo">${escapeHtml(tipoLabel[s.tipo] || s.tipo)}</span>
-              ${conflictBadge}
-              <button class="tlc-remove" data-remove="${escapeHtml(s.id)}" type="button" aria-label="Quitar ${escapeHtml(s.titulo)} de mi día">×</button>
-            </header>
-            <a class="tlc-title-link" href="/sesion/${escapeHtml(s.id)}">
-              <h3 class="tlc-title">${escapeHtml(s.titulo)}</h3>
-              ${s.descripcion ? `<p class="tlc-desc">${escapeHtml(s.descripcion)}</p>` : ''}
-              ${speakers ? `<p class="tlc-speakers">${escapeHtml(speakers)}</p>` : ''}
-              <span class="tlc-cta">ver detalle <span aria-hidden="true">→</span></span>
-            </a>
-          </article>
-        `;
-        ol.appendChild(li);
+      const colsHtml = ['pacifico', 'atlantico-b', 'atlantico-c']
+        .map((sala) => {
+          const slots = list.filter((s) => s.sala === sala);
+          const slotsHtml = slots
+            .map((s) => {
+              const top = (timeToMin(s.inicio) - minT) * PX_PER_MIN;
+              const slotH = Math.max(30, (timeToMin(s.fin) - timeToMin(s.inicio)) * PX_PER_MIN);
+              const confCls = inConflict.has(s.id) ? ' is-conflict' : '';
+              return `
+                <a class="mc-slot sala-${sala}${confCls}"
+                   href="/sesion/${escapeHtml(s.id)}"
+                   style="top:${top}px;height:${slotH}px;"
+                   aria-label="${escapeHtml(s.titulo)}, ${escapeHtml(SALA_NOMBRE_JS[sala])}, ${escapeHtml(s.inicio.slice(11, 16))} a ${escapeHtml(s.fin.slice(11, 16))}">
+                  <span class="mc-slot-time">${escapeHtml(s.inicio.slice(11, 16))}</span>
+                  <span class="mc-slot-title">${escapeHtml(s.titulo)}</span>
+                </a>
+              `;
+            })
+            .join('');
+          return `<div class="mc-col">${slotsHtml}</div>`;
+        })
+        .join('');
 
-        // Gap to next item
-        if (i < list.length - 1) {
-          const gapMs = new Date(list[i + 1].inicio).getTime() - new Date(s.fin).getTime();
-          const gapMin = Math.round(gapMs / 60_000);
-          if (gapMin >= 30) {
-            const gap = document.createElement('li');
-            gap.className = 'tl-gap';
-            const hint = gapMin >= 60 ? '· lunch / networking / café' : '· cambio de sala';
-            gap.innerHTML = `<span class="tl-gap-line" aria-hidden="true"></span><span class="tl-gap-label">${escapeHtml(fmtDuration(gapMin))} libre ${escapeHtml(hint)}</span>`;
-            ol.appendChild(gap);
-          }
-        }
-      }
-
-      ol.querySelectorAll('[data-remove]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const id = btn.dataset.remove;
-          if (!id) return;
-          const next = getStored().filter((x) => x !== id);
-          setStored(next);
-          renderAll(next);
-        });
-      });
+      grid.innerHTML = `
+        <div class="mc-cols-head" aria-hidden="true">
+          <div></div>
+          <div class="mc-sh sala-pacifico"><span class="mc-dot"></span>Pacífico</div>
+          <div class="mc-sh sala-atlantico-b"><span class="mc-dot"></span>Atl B</div>
+          <div class="mc-sh sala-atlantico-c"><span class="mc-dot"></span>Atl C</div>
+        </div>
+        <div class="mc-grid" style="height:${height}px;">
+          <div class="mc-time-col">${ticksHtml}</div>
+          ${colsHtml}
+        </div>
+      `;
     }
 
     function renderEmpty(ids) {
@@ -420,7 +415,7 @@ const speakers = speakersData as Speaker[];
       const pairs = findConflictPairs(list);
       renderStats(list, pairs);
       renderConflictSection(pairs);
-      renderTimeline(list);
+      renderMiniCalendar(list);
       renderEmpty(ids);
     }
 
@@ -1042,256 +1037,186 @@ const speakers = speakersData as Speaker[];
     color: var(--bg);
   }
 
-  /* TIMELINE */
-  .timeline-section {
+  /* MINI CALENDAR */
+  .calendar-section {
     padding: var(--s-5) 0;
     border-top: 1px solid var(--hair);
   }
 
-  .ts-head {
+  .cs-head-mini {
     margin-bottom: var(--s-4);
   }
 
-  .ts-title {
+  .cs-title-mini {
     font-family: var(--font-mono);
     font-size: var(--t-xs);
     font-weight: 700;
     color: var(--fg-dim);
     text-transform: uppercase;
     letter-spacing: 0.12em;
+    margin: 0 0 var(--s-1);
+  }
+
+  .cs-hint {
+    font-family: var(--font-body);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
     margin: 0;
   }
 
-  .timeline-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .tl-item {
-    display: grid;
-    grid-template-columns: 56px 8px 1fr;
-    gap: var(--s-3);
-    padding: 0 0 var(--s-3);
-    position: relative;
-  }
-
-  .tl-time {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
-    padding-top: var(--s-3);
-  }
-
-  .tl-start {
-    font-family: var(--font-mono);
-    font-size: var(--t-sm);
-    font-weight: 700;
-    color: var(--fg);
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-  }
-
-  .tl-dur {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--fg-dim);
-    letter-spacing: 0.04em;
-  }
-
-  .tl-bar {
-    background: currentColor;
-    border-radius: var(--r-pill);
-    margin: var(--s-3) 0 var(--s-2);
-    align-self: stretch;
-    width: 4px;
-    justify-self: center;
-  }
-
-  .tl-item.sala-pacifico .tl-bar {
-    background: var(--sala-pacifico);
-    box-shadow: 0 0 8px var(--sala-pacifico);
-  }
-  .tl-item.sala-atlantico-b .tl-bar {
-    background: var(--sala-atlantico-b);
-    box-shadow: 0 0 8px var(--sala-atlantico-b);
-  }
-  .tl-item.sala-atlantico-c .tl-bar {
-    background: var(--sala-atlantico-c);
-    box-shadow: 0 0 8px var(--sala-atlantico-c);
-  }
-
-  .tl-card {
+  .mini-calendar {
     background: var(--bg-card);
     border: 1px solid var(--hair);
-    border-radius: var(--r-md);
-    padding: var(--s-3);
-    display: flex;
-    flex-direction: column;
-    gap: var(--s-2);
-    transition: border-color var(--m-fast) var(--m-ease);
-  }
-
-  .tl-card:hover {
-    border-color: var(--hair-bright);
-  }
-
-  .tl-item.is-conflict .tl-card {
-    border-color: var(--magenta);
-    background: rgba(251, 74, 168, 0.04);
-  }
-
-  .tlc-head {
-    display: flex;
-    align-items: center;
-    gap: var(--s-2);
-    flex-wrap: wrap;
-  }
-
-  .tlc-sala {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  .tlc-tipo {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--fg-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    border-left: 1px solid var(--hair);
-    padding-left: var(--s-2);
-  }
-
-  .tl-item.sala-pacifico .tlc-sala {
-    color: var(--sala-pacifico);
-  }
-  .tl-item.sala-atlantico-b .tlc-sala {
-    color: var(--sala-atlantico-b);
-  }
-  .tl-item.sala-atlantico-c .tlc-sala {
-    color: var(--sala-atlantico-c);
-  }
-
-  .tl-conflict {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--magenta);
-    background: rgba(251, 74, 168, 0.1);
-    border: 1px solid var(--magenta);
-    padding: 2px var(--s-2);
-    border-radius: var(--r-sm);
-    letter-spacing: 0.04em;
-  }
-
-  .tlc-title-link {
-    display: block;
-    text-decoration: none;
-    color: inherit;
-  }
-
-  .tlc-title {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: var(--t-lg);
-    letter-spacing: -0.025em;
-    line-height: 1.15;
-    color: var(--fg);
-    margin: 0 0 var(--s-2);
-  }
-
-  .tlc-title-link:hover .tlc-title {
-    color: var(--cyan);
-  }
-
-  .tlc-desc {
-    font-family: var(--font-italic);
-    font-style: italic;
-    font-size: var(--t-sm);
-    color: var(--fg-soft);
-    line-height: 1.4;
-    margin: 0 0 var(--s-2);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+    border-radius: var(--r-lg);
     overflow: hidden;
   }
 
-  .tlc-speakers {
-    font-family: var(--font-body);
-    font-size: var(--t-sm);
-    color: var(--fg-soft);
-    margin: 0 0 var(--s-2);
-    line-height: 1.4;
+  .mc-cols-head {
+    display: grid;
+    grid-template-columns: 40px 1fr 1fr 1fr;
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--hair);
   }
 
-  .tlc-cta {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--cyan);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    margin-top: var(--s-1);
-  }
-
-  .tlc-remove {
-    margin-left: auto;
-    background: transparent;
-    border: 1px solid transparent;
-    color: var(--fg-dim);
-    font-size: 20px;
-    line-height: 1;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: inline-flex;
+  .mc-sh {
+    padding: var(--s-2) var(--s-2);
+    display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
-    transition: all var(--m-fast) var(--m-ease);
+    gap: var(--s-2);
+    border-left: 1px solid var(--hair);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: -0.01em;
+    color: var(--fg);
+  }
+
+  .mc-sh.sala-pacifico {
+    color: var(--sala-pacifico);
+  }
+  .mc-sh.sala-atlantico-b {
+    color: var(--sala-atlantico-b);
+  }
+  .mc-sh.sala-atlantico-c {
+    color: var(--sala-atlantico-c);
+  }
+
+  .mc-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 6px currentColor;
     flex-shrink: 0;
   }
 
-  .tlc-remove:hover {
-    color: var(--magenta);
-    border-color: var(--magenta);
-    background: rgba(251, 74, 168, 0.08);
-  }
-
-  /* GAPS */
-  .tl-gap {
+  .mc-grid {
+    position: relative;
     display: grid;
-    grid-template-columns: 56px 8px 1fr;
-    gap: var(--s-3);
-    align-items: center;
-    margin: var(--s-2) 0;
+    grid-template-columns: 40px 1fr 1fr 1fr;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent calc(60px * 2 - 1px),
+      var(--hair) calc(60px * 2 - 1px),
+      var(--hair) calc(60px * 2)
+    );
   }
 
-  .tl-gap-line {
-    grid-column: 2;
-    width: 4px;
-    height: 24px;
-    justify-self: center;
-    background-image: linear-gradient(to bottom, transparent 0, transparent 4px, var(--hair-bright) 4px, var(--hair-bright) 8px);
-    background-size: 4px 8px;
-    background-repeat: repeat-y;
+  .mc-time-col {
+    position: relative;
+    border-right: 1px solid var(--hair);
   }
 
-  .tl-gap-label {
-    grid-column: 3;
+  .mc-tick {
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: center;
+    transform: translateY(-50%);
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 10px;
     color: var(--fg-muted);
-    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+    background: var(--bg-card);
+    padding: 2px 0;
+  }
+
+  .mc-tick-first {
+    transform: translateY(0);
+  }
+
+  .mc-tick-last {
+    transform: translateY(-100%);
+  }
+
+  .mc-col {
+    position: relative;
+    border-left: 1px solid var(--hair);
+  }
+
+  .mc-slot {
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    border-radius: 6px;
+    padding: 4px 6px;
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--fg);
+    border: 1px solid;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-height: 28px;
+    transition: transform var(--m-fast) var(--m-ease);
+  }
+
+  .mc-slot:active {
+    transform: scale(0.98);
+  }
+
+  .mc-slot.sala-pacifico {
+    background: var(--sala-pacifico-soft);
+    border-color: rgba(91, 140, 255, 0.45);
+  }
+
+  .mc-slot.sala-atlantico-b {
+    background: rgba(15, 179, 252, 0.18);
+    border-color: rgba(15, 179, 252, 0.45);
+  }
+
+  .mc-slot.sala-atlantico-c {
+    background: rgba(251, 74, 168, 0.18);
+    border-color: rgba(251, 74, 168, 0.45);
+  }
+
+  .mc-slot.is-conflict {
+    box-shadow: 0 0 0 1.5px var(--magenta), 0 0 14px var(--magenta-glow);
+    z-index: 2;
+  }
+
+  .mc-slot-time {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .mc-slot-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    color: var(--fg);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
   }
 
   /* ACTIONS BAR */
