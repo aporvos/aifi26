@@ -1,0 +1,83 @@
+---
+// Public visit counter via counterapi.dev (free, no auth, no setup).
+// Increments once per browser (tracked in localStorage). Hidden until data loads.
+---
+
+<p class="visit-counter" id="visit-counter" hidden>
+  visto por <strong id="visit-count" class="vc-num">--</strong>
+  <span id="visit-label">asistentes</span>
+</p>
+
+<script is:inline>
+  (function () {
+    const STORE_KEY = 'aifi26.counted';
+    const URL_BASE = 'https://api.counterapi.dev/v1/aifi26/visits';
+
+    function formatNumber(n) {
+      try {
+        return new Intl.NumberFormat('es-AR').format(n);
+      } catch {
+        return String(n);
+      }
+    }
+
+    async function trackVisit() {
+      const counter = document.getElementById('visit-counter');
+      const numEl = document.getElementById('visit-count');
+      const labelEl = document.getElementById('visit-label');
+      if (!counter || !numEl || !labelEl) return;
+
+      const alreadyCounted = (() => {
+        try {
+          return localStorage.getItem(STORE_KEY) === '1';
+        } catch {
+          return false;
+        }
+      })();
+
+      const url = alreadyCounted ? URL_BASE : `${URL_BASE}/up`;
+
+      try {
+        const res = await fetch(url, { method: 'GET' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const count = typeof data.count === 'number' ? data.count : null;
+        if (count == null || count <= 0) return;
+
+        if (!alreadyCounted) {
+          try {
+            localStorage.setItem(STORE_KEY, '1');
+          } catch {
+            /* private mode */
+          }
+        }
+
+        numEl.textContent = formatNumber(count);
+        labelEl.textContent = count === 1 ? 'asistente' : 'asistentes';
+        counter.hidden = false;
+      } catch {
+        /* fail silently — no counter shown */
+      }
+    }
+
+    document.addEventListener('astro:page-load', trackVisit);
+    trackVisit();
+  })();
+</script>
+
+<style>
+  .visit-counter {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    text-align: center;
+    margin: var(--s-3) 0 0;
+    letter-spacing: 0.02em;
+  }
+
+  .vc-num {
+    color: var(--cyan);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+</style>
