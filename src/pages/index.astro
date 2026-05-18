@@ -11,7 +11,7 @@ import Layout from '../layouts/Layout.astro';
 
       <noscript>
         <p class="hint">
-          <a href="/dia">Ver cronograma completo →</a>
+          <a href="/ahora">Ver cronograma →</a>
         </p>
       </noscript>
     </div>
@@ -19,23 +19,13 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  // Decide which mode to show based on the BA clock, not the device clock.
-  const EVENT_START_MS = new Date('2026-05-21T08:00:00-03:00').getTime();
-  const EVENT_END_MS = new Date('2026-05-21T17:30:00-03:00').getTime();
-
-  function decideRoute(): string {
-    const t = Date.now();
-    if (t >= EVENT_START_MS && t <= EVENT_END_MS) return '/ahora';
-    return '/dia';
-  }
-
+  // Always send users to /ahora (pre-event shows the calendar with a discrete
+  // "faltan X días" eyebrow; during the event shows live timeline; post shows archive).
   function redirect() {
-    const target = decideRoute();
-    window.location.replace(target);
+    window.location.replace('/ahora');
   }
 
   document.addEventListener('astro:page-load', redirect);
-  // Astro may execute scripts before transition framework binds — also run sync.
   redirect();
 </script>
 
