@@ -46,7 +46,7 @@ const hourMarks = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
 
   <ModeToggle active="ahora" />
 
-  <header class="hero">
+  <header class="hero" id="hero" hidden>
     <div class="container">
       <p class="hero-eyebrow" id="hero-eyebrow">en este momento</p>
       <h1 class="hero-time" id="hero-time">--:--</h1>
@@ -197,9 +197,10 @@ const hourMarks = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
     }
 
     function updateHero(now) {
+      const hero = document.getElementById('hero');
       const time = document.getElementById('hero-time');
       const eyebrow = document.getElementById('hero-eyebrow');
-      if (!time || !eyebrow) return;
+      if (!hero || !time || !eyebrow) return;
 
       const t = now.getTime();
       const isPre = t < EVENT_START_MS;
@@ -207,20 +208,10 @@ const hourMarks = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
       const onDay = isEventDay(now);
 
       if (isPre) {
-        const days = Math.ceil((EVENT_START_MS - t) / 86_400_000);
-        if (days <= 0) {
-          eyebrow.textContent = 'arranca hoy';
-          time.textContent = '08:00';
-        } else if (days === 1) {
-          eyebrow.textContent = 'arranca';
-          time.textContent = 'mañana';
-        } else {
-          eyebrow.textContent = 'faltan';
-          time.textContent = `${days} días`;
-        }
-        time.classList.add('is-soft');
+        hero.hidden = true;
         return;
       }
+      hero.hidden = false;
 
       if (isPost) {
         eyebrow.textContent = 'el evento terminó';
