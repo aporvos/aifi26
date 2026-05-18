@@ -24,6 +24,7 @@
     "id": "diego-rivas",
     "nombre": "Diego Rivas",
     "rol": "CEO Banco Galicia",
+    "linkedin": "https://www.linkedin.com/in/rivasdiego/",
     "bio": "Enfocado en innovación de servicios financieros, omnicanalidad y experiencia integral de clientes."
   },
   {
@@ -198,6 +199,7 @@
     "id": "martin-fernandez-canto",
     "nombre": "Martín Fernández Canto",
     "rol": "Global Sales Director Numia",
+    "linkedin": "https://www.linkedin.com/in/martinfernandezcanto/",
     "bio": "Combina ventas enterprise, data products y soluciones de inteligencia artificial."
   },
   {
@@ -211,6 +213,7 @@
     "id": "sebastian-chuffer",
     "nombre": "Sebastián Chuffer",
     "rol": "CEO Ruptive AI",
+    "linkedin": "https://www.linkedin.com/in/sebachuffer/",
     "bio": "Especializado en automatizar producción de contenido y video mediante inteligencia artificial."
   },
   {
@@ -266,6 +269,7 @@
     "id": "tomas-mindlin",
     "nombre": "Tomas Mindlin",
     "rol": "CEO Tapi",
+    "linkedin": "https://www.linkedin.com/in/tomas-mindlin/",
     "bio": "Founder de soluciones de APIs e infraestructura para fintechs y bancos."
   },
   {
@@ -328,6 +332,7 @@
     "id": "lorena-comino",
     "nombre": "Lorena Comino",
     "rol": "CEO Facturante",
+    "linkedin": "https://www.linkedin.com/in/lorenacomino/",
     "bio": "Impulsa facturación electrónica, automatización fiscal y servicios para pymes."
   },
   {
@@ -348,12 +353,14 @@
     "id": "mariano-cirio",
     "nombre": "Mariano Cirio",
     "rol": "Gerente General Mercado Argentino de Valores",
+    "linkedin": "https://www.linkedin.com/in/mariano-cirio-04b71aa9/",
     "bio": "Experto en mercado de capitales y productos bursátiles."
   },
   {
     "id": "gustavo-koblinc",
     "nombre": "Gustavo Koblinc",
     "rol": "CXO Grupo Omint",
+    "linkedin": "https://www.linkedin.com/in/gustavokoblinc/",
     "bio": "Trabaja en experiencia de cliente, innovación y servicios en seguros y salud."
   }
 ]
