@@ -29,7 +29,7 @@ bun run check    # astro type check (debe estar 0/0/0)
 | Vercel Web Analytics + Speed Insights | Métrica privada para el autor |
 | Sin OG image PNG · sólo SVG (`/og.svg`) | OpenAI gen no aplicable (sin org-verified) |
 | Sin AI gen de cualquier tipo | Audiencia detecta slop |
-| Categorías: badge + filtro `/dia` + página `/categoria/[slug]` | Opción C accepted en CEO review |
+| Categorías: badge + página `/categoria/[slug]` (sin filtro en `/dia`) | User cut filtro por tema · ruido |
 | `/` redirige siempre a `/ahora` | Default consistente |
 | `/ahora` muestra timeline completo pre-evento (no empty state) | Decisión explícita del user |
 | `/mi-dia` usa mini-calendario (no lista) | Opción C accepted en UX review |

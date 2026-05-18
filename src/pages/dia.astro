@@ -5,7 +5,6 @@ import ModeToggle from '../components/ModeToggle.astro';
 import SessionCard from '../components/SessionCard.astro';
 import sesionesData from '../data/sesiones.json';
 import speakersData from '../data/speakers.json';
-import categoriasData from '../data/categorias.json';
 import { SALA_NOMBRE, type SalaSlug, type Sesion, type Speaker } from '../types';
 
 const sesiones = sesionesData as Sesion[];
@@ -42,7 +41,6 @@ const totalSesiones = sesiones.filter((s) => s.tipo !== 'break' && s.tipo !== 'a
   <section class="filters" aria-label="Filtros">
     <div class="container">
       <div class="filter-row" role="group" aria-label="Filtrar por sala">
-        <span class="filter-label">Salas</span>
         <div class="filter-pills">
           {
             salasFilter.map((sala) => (
@@ -59,29 +57,13 @@ const totalSesiones = sesiones.filter((s) => s.tipo !== 'break' && s.tipo !== 'a
           }
         </div>
       </div>
-
-      <div class="filter-row" role="group" aria-label="Filtrar por categoría">
-        <span class="filter-label">Tema</span>
-        <div class="filter-pills" role="tablist">
-          <button class="filter-pill cat-pill active" data-filter="all" role="tab" aria-selected="true">
-            Todas
-          </button>
-          {
-            categoriasData.map((c) => (
-              <button class="filter-pill cat-pill" data-filter={c.slug} role="tab" aria-selected="false">
-                {c.nombre}
-              </button>
-            ))
-          }
-        </div>
-      </div>
     </div>
   </section>
 
   <section id="filter-empty" class="filter-empty" hidden>
     <div class="container">
       <p class="fe-title">Sin charlas con estos filtros</p>
-      <p class="fe-sub">Probá ampliar la selección de salas o cambiar el tema.</p>
+      <p class="fe-sub">Probá ampliar la selección de salas.</p>
       <button class="fe-reset" type="button" id="filter-reset">Reset filtros</button>
     </div>
   </section>
@@ -157,35 +139,14 @@ const totalSesiones = sesiones.filter((s) => s.tipo !== 'break' && s.tipo !== 'a
     display: flex;
     align-items: center;
     gap: var(--s-3);
-    margin-bottom: var(--s-2);
-  }
-
-  .filter-row:last-child {
-    margin-bottom: 0;
-  }
-
-  .filter-label {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--fg-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    flex-shrink: 0;
-    width: 48px;
   }
 
   .filter-pills {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--s-2);
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    padding-bottom: var(--s-2);
     flex: 1;
-  }
-
-  .filter-pills::-webkit-scrollbar {
-    display: none;
+    min-width: 0;
   }
 
   .filter-pill {
@@ -214,14 +175,6 @@ const totalSesiones = sesiones.filter((s) => s.tipo !== 'break' && s.tipo !== 'a
   .filter-pill:hover {
     color: var(--fg);
     border-color: var(--hair-bright);
-  }
-
-  /* Category pills: cyan active */
-  .cat-pill.active {
-    background: var(--cyan);
-    color: var(--bg);
-    border-color: var(--cyan);
-    font-weight: 600;
   }
 
   /* Sala pills: colored dot + border per sala when active */
@@ -356,10 +309,7 @@ const totalSesiones = sesiones.filter((s) => s.tipo !== 'break' && s.tipo !== 'a
 </style>
 
 <script>
-  // Combined filter: sala (multi-select toggles, all on by default)
-  // + categoría (single-select with "all").
   const activeSalas = new Set<string>(['pacifico', 'atlantico-b', 'atlantico-c']);
-  let activeCat = 'all';
 
   function applyFilters() {
     const cards = document.querySelectorAll<HTMLElement>('.session-card');
@@ -368,12 +318,7 @@ const totalSesiones = sesiones.filter((s) => s.tipo !== 'break' && s.tipo !== 'a
 
     cards.forEach((card) => {
       const sala = card.dataset.sala ?? '';
-      const cat = card.dataset.cat ?? '';
-      const alt = (card.dataset.catAlt ?? '').split(',').filter(Boolean);
-
-      const salaOk = activeSalas.has(sala);
-      const catOk = activeCat === 'all' || cat === activeCat || alt.includes(activeCat);
-      const visible = salaOk && catOk;
+      const visible = activeSalas.has(sala);
 
       card.style.display = visible ? '' : 'none';
       if (visible) totalVisible++;
@@ -400,15 +345,9 @@ const totalSesiones = sesiones.filter((s) => s.tipo !== 'break' && s.tipo !== 'a
     activeSalas.add('pacifico');
     activeSalas.add('atlantico-b');
     activeSalas.add('atlantico-c');
-    activeCat = 'all';
     document.querySelectorAll<HTMLButtonElement>('.sala-pill').forEach((p) => {
       p.classList.add('active');
       p.setAttribute('aria-pressed', 'true');
-    });
-    document.querySelectorAll<HTMLButtonElement>('.cat-pill').forEach((p) => {
-      const isAll = p.dataset.filter === 'all';
-      p.classList.toggle('active', isAll);
-      p.setAttribute('aria-selected', String(isAll));
     });
     applyFilters();
   }
@@ -432,29 +371,12 @@ const totalSesiones = sesiones.filter((s) => s.tipo !== 'break' && s.tipo !== 'a
     });
   }
 
-  function setupCatFilters() {
-    const pills = document.querySelectorAll<HTMLButtonElement>('.cat-pill');
-    pills.forEach((pill) => {
-      pill.addEventListener('click', () => {
-        const filter = pill.dataset.filter ?? 'all';
-        activeCat = filter;
-        pills.forEach((p) => {
-          const isActive = p === pill;
-          p.classList.toggle('active', isActive);
-          p.setAttribute('aria-selected', String(isActive));
-        });
-        applyFilters();
-      });
-    });
-  }
-
   function setupReset() {
     document.getElementById('filter-reset')?.addEventListener('click', resetFilters);
   }
 
   function init() {
     setupSalaFilters();
-    setupCatFilters();
     setupReset();
     applyFilters();
   }
