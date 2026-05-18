@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import Ticker from '../../components/Ticker.astro';
+import ModeToggle from '../../components/ModeToggle.astro';
 import RoomBadge from '../../components/RoomBadge.astro';
 import CategoryBadge from '../../components/CategoryBadge.astro';
 import sesionesData from '../../data/sesiones.json';
@@ -49,6 +50,7 @@ const tipoLabel: Record<Sesion['tipo'], string> = {
   description={sesion.descripcion ?? `${sesion.titulo} · ${SALA_NOMBRE[sesion.sala]} · ${timeRange}`}
 >
   <Ticker />
+  <ModeToggle />
 
   <article class="page">
     <div class="container">
