@@ -1037,7 +1037,7 @@ const speakers = speakersData as Speaker[];
     color: var(--bg);
   }
 
-  /* MINI CALENDAR */
+  /* MINI CALENDAR — wrapper (scoped) */
   .calendar-section {
     padding: var(--s-5) 0;
     border-top: 1px solid var(--hair);
@@ -1069,154 +1069,6 @@ const speakers = speakersData as Speaker[];
     border: 1px solid var(--hair);
     border-radius: var(--r-lg);
     overflow: hidden;
-  }
-
-  .mc-cols-head {
-    display: grid;
-    grid-template-columns: 40px 1fr 1fr 1fr;
-    background: var(--bg-elev);
-    border-bottom: 1px solid var(--hair);
-  }
-
-  .mc-sh {
-    padding: var(--s-2) var(--s-2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--s-2);
-    border-left: 1px solid var(--hair);
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 11px;
-    letter-spacing: -0.01em;
-    color: var(--fg);
-  }
-
-  .mc-sh.sala-pacifico {
-    color: var(--sala-pacifico);
-  }
-  .mc-sh.sala-atlantico-b {
-    color: var(--sala-atlantico-b);
-  }
-  .mc-sh.sala-atlantico-c {
-    color: var(--sala-atlantico-c);
-  }
-
-  .mc-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: currentColor;
-    box-shadow: 0 0 6px currentColor;
-    flex-shrink: 0;
-  }
-
-  .mc-grid {
-    position: relative;
-    display: grid;
-    grid-template-columns: 40px 1fr 1fr 1fr;
-    background-image: repeating-linear-gradient(
-      to bottom,
-      transparent,
-      transparent calc(60px * 2 - 1px),
-      var(--hair) calc(60px * 2 - 1px),
-      var(--hair) calc(60px * 2)
-    );
-  }
-
-  .mc-time-col {
-    position: relative;
-    border-right: 1px solid var(--hair);
-  }
-
-  .mc-tick {
-    position: absolute;
-    left: 0;
-    right: 0;
-    text-align: center;
-    transform: translateY(-50%);
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--fg-muted);
-    font-variant-numeric: tabular-nums;
-    background: var(--bg-card);
-    padding: 2px 0;
-  }
-
-  .mc-tick-first {
-    transform: translateY(0);
-  }
-
-  .mc-tick-last {
-    transform: translateY(-100%);
-  }
-
-  .mc-col {
-    position: relative;
-    border-left: 1px solid var(--hair);
-  }
-
-  .mc-slot {
-    position: absolute;
-    left: 3px;
-    right: 3px;
-    border-radius: 6px;
-    padding: 4px 6px;
-    overflow: hidden;
-    text-decoration: none;
-    color: var(--fg);
-    border: 1px solid;
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    min-height: 28px;
-    transition: transform var(--m-fast) var(--m-ease);
-  }
-
-  .mc-slot:active {
-    transform: scale(0.98);
-  }
-
-  .mc-slot.sala-pacifico {
-    background: var(--sala-pacifico-soft);
-    border-color: rgba(91, 140, 255, 0.45);
-  }
-
-  .mc-slot.sala-atlantico-b {
-    background: rgba(15, 179, 252, 0.18);
-    border-color: rgba(15, 179, 252, 0.45);
-  }
-
-  .mc-slot.sala-atlantico-c {
-    background: rgba(251, 74, 168, 0.18);
-    border-color: rgba(251, 74, 168, 0.45);
-  }
-
-  .mc-slot.is-conflict {
-    box-shadow: 0 0 0 1.5px var(--magenta), 0 0 14px var(--magenta-glow);
-    z-index: 2;
-  }
-
-  .mc-slot-time {
-    font-family: var(--font-mono);
-    font-size: 9px;
-    color: var(--fg-muted);
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-    flex-shrink: 0;
-  }
-
-  .mc-slot-title {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 11px;
-    letter-spacing: -0.01em;
-    line-height: 1.15;
-    color: var(--fg);
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 5;
   }
 
   /* ACTIONS BAR */
@@ -1412,5 +1264,156 @@ const speakers = speakersData as Speaker[];
 
   .clear-actions .btn {
     flex: 1;
+  }
+</style>
+
+<style is:global>
+  /* MINI CALENDAR — inner dynamic HTML (rendered via innerHTML, needs global scope) */
+  .mc-cols-head {
+    display: grid;
+    grid-template-columns: 40px 1fr 1fr 1fr;
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .mc-sh {
+    padding: var(--s-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s-2);
+    border-left: 1px solid var(--hair);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: -0.01em;
+    color: var(--fg);
+  }
+
+  .mc-sh.sala-pacifico {
+    color: var(--sala-pacifico);
+  }
+  .mc-sh.sala-atlantico-b {
+    color: var(--sala-atlantico-b);
+  }
+  .mc-sh.sala-atlantico-c {
+    color: var(--sala-atlantico-c);
+  }
+
+  .mc-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 6px currentColor;
+    flex-shrink: 0;
+  }
+
+  .mc-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: 40px 1fr 1fr 1fr;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent calc(120px - 1px),
+      var(--hair) calc(120px - 1px),
+      var(--hair) 120px
+    );
+  }
+
+  .mc-time-col {
+    position: relative;
+    border-right: 1px solid var(--hair);
+  }
+
+  .mc-tick {
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: center;
+    transform: translateY(-50%);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+    background: var(--bg-card);
+    padding: 2px 0;
+  }
+
+  .mc-tick-first {
+    transform: translateY(0);
+  }
+
+  .mc-tick-last {
+    transform: translateY(-100%);
+  }
+
+  .mc-col {
+    position: relative;
+    border-left: 1px solid var(--hair);
+  }
+
+  .mc-slot {
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    border-radius: 6px;
+    padding: 4px 6px;
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--fg);
+    border: 1px solid;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-height: 28px;
+    transition: transform var(--m-fast) var(--m-ease);
+  }
+
+  .mc-slot:active {
+    transform: scale(0.98);
+  }
+
+  .mc-slot.sala-pacifico {
+    background: var(--sala-pacifico-soft);
+    border-color: rgba(91, 140, 255, 0.45);
+  }
+
+  .mc-slot.sala-atlantico-b {
+    background: rgba(15, 179, 252, 0.18);
+    border-color: rgba(15, 179, 252, 0.45);
+  }
+
+  .mc-slot.sala-atlantico-c {
+    background: rgba(251, 74, 168, 0.18);
+    border-color: rgba(251, 74, 168, 0.45);
+  }
+
+  .mc-slot.is-conflict {
+    box-shadow: 0 0 0 1.5px var(--magenta), 0 0 14px var(--magenta-glow);
+    z-index: 2;
+  }
+
+  .mc-slot-time {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .mc-slot-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    color: var(--fg);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
   }
 </style>
