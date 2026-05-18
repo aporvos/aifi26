@@ -108,7 +108,7 @@ git push                # → Vercel deploy automático en ~60s
 
 ## Contexto humano
 
-- Autor: **Gonzalo Arribere** · gonzaloarribere@gmail.com · https://linkedin.com/in/gonzaloarribere/
+- Autor: **Gonzalo Arribere** · gonzaloarribere@gmail.com · https://linkedin.com/in/garribere/
 - Audiencia: C-level/director innovación de banco/fintech argentina, founders, VCs.
 - Estrategia personal: vehículo de branding personal. La calidad del último 5% importa más que features adicionales.
 

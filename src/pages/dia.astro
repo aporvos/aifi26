@@ -355,6 +355,8 @@ const totalSesiones = sesiones.filter((s) => s.tipo !== 'break' && s.tipo !== 'a
   function setupSalaFilters() {
     const pills = document.querySelectorAll<HTMLButtonElement>('.sala-pill');
     pills.forEach((pill) => {
+      if (pill.dataset.wired === '1') return;
+      pill.dataset.wired = '1';
       pill.addEventListener('click', () => {
         const sala = pill.dataset.salaFilter;
         if (!sala) return;
@@ -372,7 +374,10 @@ const totalSesiones = sesiones.filter((s) => s.tipo !== 'break' && s.tipo !== 'a
   }
 
   function setupReset() {
-    document.getElementById('filter-reset')?.addEventListener('click', resetFilters);
+    const btn = document.getElementById('filter-reset');
+    if (!btn || btn.dataset.wired === '1') return;
+    btn.dataset.wired = '1';
+    btn.addEventListener('click', resetFilters);
   }
 
   function init() {
