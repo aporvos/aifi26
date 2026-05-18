@@ -79,7 +79,7 @@ const speakers = speakersData as Speaker[];
   <section id="actions-bar" class="actions-bar" aria-label="Acciones" hidden>
     <div class="container">
       <div class="actions-secondary">
-        <button class="btn btn-ghost" id="clear-btn" type="button">
+        <button class="btn btn-primary" id="clear-btn" type="button">
           Vaciar
         </button>
       </div>
@@ -672,18 +672,11 @@ const speakers = speakersData as Speaker[];
 
   .actions-secondary {
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--s-2);
+    justify-content: center;
   }
 
   .actions-secondary .btn {
-    flex: 1;
-    min-width: 140px;
-  }
-
-  .actions-secondary .btn-ghost {
-    flex: 0 0 auto;
-    min-width: auto;
+    min-width: 200px;
   }
 
   .actions-note {
