@@ -218,14 +218,18 @@ const hourMarks = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
           eyebrow.textContent = 'faltan';
           time.textContent = `${days} días`;
         }
+        time.classList.add('is-soft');
         return;
       }
 
       if (isPost) {
         eyebrow.textContent = 'el evento terminó';
         time.textContent = 'archivo';
+        time.classList.add('is-soft');
         return;
       }
+
+      time.classList.remove('is-soft');
 
       // During the event
       const hh = new Intl.DateTimeFormat('es-AR', {
@@ -446,6 +450,13 @@ const hourMarks = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
     margin: 0;
     color: var(--fg);
     font-variant-numeric: tabular-nums;
+  }
+
+  .hero-time.is-soft {
+    font-size: var(--t-lg);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--fg-soft);
   }
 
   /* POST EVENT EMPTY STATE */
