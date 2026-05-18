@@ -23,7 +23,7 @@ bun run check    # astro type check (debe estar 0/0/0)
 |---|---|
 | Astro 5 SSG, no SSR/hybrid | Cero backend, cabe en static |
 | Sin login, favoritos en localStorage | Time-boxed, sin DB |
-| URL `?s=ids` para compartir Mi día | Cross-device sin servidor |
+| URL `?s=ids` import sigue activa (sin botón Compartir) | User cut · no era útil, el import-prompt queda |
 | Timezone hardcoded `America/Argentina/Buenos_Aires` | Robusto contra device clock |
 | Counter público via counterapi.dev | Zero infra · "visto por N asistentes" en footer |
 | Vercel Web Analytics + Speed Insights | Métrica privada para el autor |

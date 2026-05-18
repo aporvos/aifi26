@@ -79,9 +79,6 @@ const speakers = speakersData as Speaker[];
   <section id="actions-bar" class="actions-bar" aria-label="Acciones" hidden>
     <div class="container">
       <div class="actions-secondary">
-        <button class="btn" id="share-btn" type="button">
-          <span class="btn-icon" aria-hidden="true">↗</span> Compartir
-        </button>
         <button class="btn btn-ghost" id="clear-btn" type="button">
           Vaciar
         </button>
@@ -318,43 +315,6 @@ const speakers = speakersData as Speaker[];
       renderAll(stored);
     }
 
-    function setupShare() {
-      const btn = document.getElementById('share-btn');
-      const status = document.getElementById('actions-status');
-      if (!btn || !status) return;
-      if (btn.dataset.wired === '1') return;
-      btn.dataset.wired = '1';
-
-      btn.addEventListener('click', async () => {
-        const ids = getStored();
-        const url = `${window.location.origin}/mi-dia?s=${encodeURIComponent(ids.join(','))}`;
-        const count = ids.length;
-        const text = `Mi agenda para AIFI26 (${count} ${count === 1 ? 'charla' : 'charlas'}) · 21 may, Hilton BA`;
-
-        if (navigator.share) {
-          try {
-            await navigator.share({ title: 'AIFI26', text, url });
-            status.textContent = '✓ compartido';
-            setTimeout(() => (status.textContent = ''), 3000);
-            return;
-          } catch (err) {
-            if (err && err.name === 'AbortError') {
-              status.textContent = '';
-              return;
-            }
-          }
-        }
-
-        try {
-          await navigator.clipboard.writeText(url);
-          status.textContent = '✓ link copiado al portapapeles';
-          setTimeout(() => (status.textContent = ''), 3000);
-        } catch {
-          status.textContent = url;
-        }
-      });
-    }
-
     function escapeIcs(s) {
       return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
     }
@@ -480,7 +440,6 @@ const speakers = speakersData as Speaker[];
 
     function init() {
       setupImportPrompt();
-      setupShare();
       setupIcs();
       setupClear();
     }
