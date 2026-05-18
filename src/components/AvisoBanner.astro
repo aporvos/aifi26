@@ -1,0 +1,96 @@
+---
+import type { Aviso } from '../types';
+import avisosData from '../data/avisos.json';
+
+const avisos = avisosData as Aviso[];
+
+function isActive(a: Aviso, now: Date = new Date()): boolean {
+  const t = now.getTime();
+  if (a.desde && t < new Date(a.desde).getTime()) return false;
+  if (a.hasta && t > new Date(a.hasta).getTime()) return false;
+  return true;
+}
+
+const visibles = avisos.filter((a) => isActive(a));
+---
+
+{
+  visibles.length > 0 && (
+    <div class="avisos" role="region" aria-label="Avisos">
+      {visibles.map((a) => (
+        <div class:list={['aviso', `aviso-${a.tipo}`]}>
+          <span class="dot" aria-hidden="true" />
+          <span class="texto">{a.texto}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+<style>
+  .avisos {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .aviso {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    padding: var(--s-3) var(--s-4);
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    line-height: 1.4;
+  }
+
+  .aviso .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .aviso-info {
+    background: rgba(15, 179, 252, 0.08);
+    color: var(--fg);
+  }
+
+  .aviso-info .dot {
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+  }
+
+  .aviso-warning {
+    background: rgba(251, 191, 36, 0.08);
+    color: var(--fg);
+  }
+
+  .aviso-warning .dot {
+    background: #fbbf24;
+    box-shadow: 0 0 8px #fbbf24;
+  }
+
+  .aviso-urgent {
+    background: rgba(251, 74, 168, 0.1);
+    color: var(--fg);
+  }
+
+  .aviso-urgent .dot {
+    background: var(--magenta);
+    box-shadow: 0 0 10px var(--magenta);
+    animation: pulse 1.8s infinite;
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.3);
+      opacity: 0.7;
+    }
+  }
+</style>

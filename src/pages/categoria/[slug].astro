@@ -1,0 +1,243 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Ticker from '../../components/Ticker.astro';
+import SessionCard from '../../components/SessionCard.astro';
+import sesionesData from '../../data/sesiones.json';
+import speakersData from '../../data/speakers.json';
+import categoriasData from '../../data/categorias.json';
+import type { CategoriaSlug, Sesion, Speaker } from '../../types';
+
+export function getStaticPaths() {
+  return categoriasData.map((c) => ({ params: { slug: c.slug } }));
+}
+
+const { slug } = Astro.params;
+const sesiones = sesionesData as Sesion[];
+const speakers = speakersData as Speaker[];
+
+const cat = categoriasData.find((c) => c.slug === slug);
+if (!cat) {
+  return Astro.redirect('/dia');
+}
+
+const inCategory = sesiones.filter(
+  (s) => s.category === slug || (s.categoryAlt ?? []).includes(slug as CategoriaSlug),
+);
+
+const grouped: Record<string, Sesion[]> = {};
+for (const s of inCategory) {
+  const time = s.inicio.slice(11, 16);
+  (grouped[time] ??= []).push(s);
+}
+const sortedTimes = Object.keys(grouped).sort();
+---
+
+<Layout
+  title={`${cat.nombre} · AIFI26`}
+  description={cat.descripcion}
+>
+  <script is:inline define:vars={{ sesionesPayload: sesiones, speakersPayload: speakers }}>
+    (window).__AIFI_DATA__ = { sesiones: sesionesPayload, speakers: speakersPayload };
+  </script>
+  <Ticker />
+
+  <header class="page-head">
+    <div class="container">
+      <nav class="crumbs" aria-label="Volver">
+        <a href="/dia">← Día completo</a>
+      </nav>
+      <p class="eyebrow">Track temático</p>
+      <h1 class="title">{cat.nombre}</h1>
+      <p class="desc">{cat.descripcion}</p>
+      <p class="count">{inCategory.length} {inCategory.length === 1 ? 'sesión' : 'sesiones'}</p>
+    </div>
+  </header>
+
+  <section class="schedule" aria-label={`Sesiones de ${cat.nombre}`}>
+    <div class="container">
+      {
+        sortedTimes.length === 0 ? (
+          <p class="empty">Sin sesiones en esta categoría.</p>
+        ) : (
+          sortedTimes.map((time) => (
+            <div class="hour-group">
+              <header class="hour-header">
+                <span class="hour-time">{time}</span>
+                <span class="hour-line" aria-hidden="true" />
+              </header>
+              <div class="cards">
+                {grouped[time]!.map((sesion) => (
+                  <SessionCard sesion={sesion} speakers={speakers} variant="compact" />
+                ))}
+              </div>
+            </div>
+          ))
+        )
+      }
+    </div>
+  </section>
+
+  <section class="cross-nav" aria-label="Otras categorías">
+    <div class="container">
+      <h2 class="cross-title">Otros tracks</h2>
+      <ul class="cross-list">
+        {
+          categoriasData
+            .filter((c) => c.slug !== slug)
+            .map((c) => (
+              <li>
+                <a href={`/categoria/${c.slug}`}>{c.nombre} →</a>
+              </li>
+            ))
+        }
+      </ul>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .container {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding: 0 var(--s-4);
+  }
+
+  .page-head {
+    padding: var(--s-4) 0 var(--s-3);
+  }
+
+  .crumbs {
+    margin-bottom: var(--s-4);
+  }
+
+  .crumbs a {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+
+  .crumbs a:hover {
+    color: var(--cyan);
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 var(--s-2);
+  }
+
+  .title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--t-2xl);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin: 0 0 var(--s-3);
+    color: var(--fg);
+  }
+
+  .desc {
+    font-family: var(--font-italic);
+    font-style: italic;
+    font-size: var(--t-sm);
+    color: var(--fg-soft);
+    line-height: 1.5;
+    margin: 0 0 var(--s-3);
+  }
+
+  .count {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    margin: 0;
+  }
+
+  .schedule {
+    padding: var(--s-5) 0 0;
+  }
+
+  .hour-group {
+    margin-bottom: var(--s-5);
+  }
+
+  .hour-header {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    margin-bottom: var(--s-3);
+  }
+
+  .hour-time {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: var(--t-sm);
+    color: var(--fg);
+    background: var(--bg-elev);
+    padding: var(--s-1) var(--s-2);
+    border-radius: var(--r-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hour-line {
+    flex: 1;
+    height: 1px;
+    background: var(--hair);
+  }
+
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+
+  .empty {
+    padding: var(--s-7) 0;
+    text-align: center;
+    font-family: var(--font-body);
+    color: var(--fg-muted);
+  }
+
+  .cross-nav {
+    margin-top: var(--s-7);
+    padding: var(--s-5) 0;
+    border-top: 1px solid var(--hair);
+  }
+
+  .cross-title {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-dim);
+    margin: 0 0 var(--s-3);
+  }
+
+  .cross-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+
+  .cross-list a {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: var(--t-md);
+    color: var(--fg-soft);
+    text-decoration: none;
+    padding: var(--s-2) 0;
+    letter-spacing: -0.02em;
+  }
+
+  .cross-list a:hover {
+    color: var(--cyan);
+  }
+</style>

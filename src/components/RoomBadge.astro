@@ -1,0 +1,68 @@
+---
+import { SALA_NOMBRE, type SalaSlug } from '../types';
+
+interface Props {
+  sala: SalaSlug;
+  size?: 'sm' | 'md';
+}
+
+const { sala, size = 'md' } = Astro.props;
+const nombre = SALA_NOMBRE[sala];
+---
+
+<span class:list={['room-badge', `room-${sala}`, `size-${size}`]}>
+  <span class="dot" aria-hidden="true"></span>
+  {nombre}
+</span>
+
+<style>
+  .room-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    font-family: var(--font-body);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    box-shadow: 0 0 8px currentColor;
+    flex-shrink: 0;
+  }
+
+  .room-pacifico {
+    color: var(--sala-pacifico);
+  }
+  .room-atlantico-b {
+    color: var(--sala-atlantico-b);
+  }
+  .room-atlantico-c {
+    color: var(--sala-atlantico-c);
+  }
+
+  .room-pacifico .dot {
+    background: var(--sala-pacifico);
+  }
+  .room-atlantico-b .dot {
+    background: var(--sala-atlantico-b);
+  }
+  .room-atlantico-c .dot {
+    background: var(--sala-atlantico-c);
+  }
+
+  .size-sm {
+    font-size: var(--t-xs);
+  }
+  .size-sm .dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .size-md {
+    font-size: var(--t-sm);
+  }
+</style>

@@ -1,0 +1,465 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Ticker from '../components/Ticker.astro';
+import ModeToggle from '../components/ModeToggle.astro';
+import SessionCard from '../components/SessionCard.astro';
+import sesionesData from '../data/sesiones.json';
+import speakersData from '../data/speakers.json';
+import categoriasData from '../data/categorias.json';
+import { SALA_NOMBRE, type SalaSlug, type Sesion, type Speaker } from '../types';
+
+const sesiones = sesionesData as Sesion[];
+const speakers = speakersData as Speaker[];
+const salasFilter: SalaSlug[] = ['pacifico', 'atlantico-b', 'atlantico-c'];
+
+const grouped: Record<string, Sesion[]> = {};
+for (const s of sesiones) {
+  const time = s.inicio.split('T')[1]!.substring(0, 5);
+  (grouped[time] ??= []).push(s);
+}
+const sortedTimes = Object.keys(grouped).sort();
+
+const totalSesiones = sesiones.filter((s) => s.tipo !== 'break' && s.tipo !== 'acreditacion').length;
+---
+
+<Layout
+  title="Día completo · AIFI26"
+  description="Cronograma completo de AIFI26 · 28 sesiones · 3 salas · 21 mayo 2026"
+>
+  <script is:inline define:vars={{ sesionesPayload: sesiones, speakersPayload: speakers }}>
+    (window).__AIFI_DATA__ = { sesiones: sesionesPayload, speakers: speakersPayload };
+  </script>
+  <Ticker />
+  <ModeToggle active="dia" />
+
+  <header class="page-head">
+    <div class="container">
+      <p class="eyebrow">jueves 21 mayo · Hilton BA</p>
+      <h1 class="title">Día completo</h1>
+      <p class="sub">{totalSesiones} sesiones · 3 salas en paralelo</p>
+    </div>
+  </header>
+
+  <section class="filters" aria-label="Filtros">
+    <div class="container">
+      <div class="filter-row" role="group" aria-label="Filtrar por sala">
+        <span class="filter-label">Salas</span>
+        <div class="filter-pills">
+          {
+            salasFilter.map((sala) => (
+              <button
+                class="filter-pill sala-pill active"
+                data-sala-filter={sala}
+                type="button"
+                aria-pressed="true"
+              >
+                <span class={`pill-dot dot-${sala}`} aria-hidden="true" />
+                {SALA_NOMBRE[sala]}
+              </button>
+            ))
+          }
+        </div>
+      </div>
+
+      <div class="filter-row" role="group" aria-label="Filtrar por categoría">
+        <span class="filter-label">Tema</span>
+        <div class="filter-pills" role="tablist">
+          <button class="filter-pill cat-pill active" data-filter="all" role="tab" aria-selected="true">
+            Todas
+          </button>
+          {
+            categoriasData.map((c) => (
+              <button class="filter-pill cat-pill" data-filter={c.slug} role="tab" aria-selected="false">
+                {c.nombre}
+              </button>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="filter-empty" class="filter-empty" hidden>
+    <div class="container">
+      <p class="fe-title">Sin charlas con estos filtros</p>
+      <p class="fe-sub">Probá ampliar la selección de salas o cambiar el tema.</p>
+      <button class="fe-reset" type="button" id="filter-reset">Reset filtros</button>
+    </div>
+  </section>
+
+  <section class="schedule" aria-label="Sesiones del día">
+    <div class="container">
+      {
+        sortedTimes.map((time) => (
+          <div class="hour-group" data-time={time}>
+            <header class="hour-header">
+              <span class="hour-time">{time}</span>
+              <span class="hour-line" aria-hidden="true" />
+            </header>
+            <div class="cards">
+              {grouped[time]!.map((sesion) => (
+                <SessionCard sesion={sesion} speakers={speakers} variant="compact" />
+              ))}
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .container {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding: 0 var(--s-4);
+  }
+
+  .page-head {
+    padding: var(--s-5) 0 var(--s-3);
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 var(--s-2);
+  }
+
+  .title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--t-2xl);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin: 0;
+    color: var(--fg);
+  }
+
+  .sub {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    margin: var(--s-2) 0 0;
+  }
+
+  .filters {
+    padding: var(--s-4) 0 var(--s-3);
+    position: sticky;
+    top: var(--sticky-top-after-modes);
+    background: var(--bg);
+    z-index: 10;
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .filter-row {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    margin-bottom: var(--s-2);
+  }
+
+  .filter-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .filter-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--fg-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    flex-shrink: 0;
+    width: 48px;
+  }
+
+  .filter-pills {
+    display: flex;
+    gap: var(--s-2);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: var(--s-2);
+    flex: 1;
+  }
+
+  .filter-pills::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-pill {
+    flex-shrink: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--hair);
+    color: var(--fg-muted);
+    font-family: var(--font-body);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--r-pill);
+    cursor: pointer;
+    min-height: 32px;
+    letter-spacing: -0.01em;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    transition:
+      background var(--m-fast) var(--m-ease),
+      color var(--m-fast) var(--m-ease),
+      border-color var(--m-fast) var(--m-ease),
+      opacity var(--m-fast) var(--m-ease);
+  }
+
+  .filter-pill:hover {
+    color: var(--fg);
+    border-color: var(--hair-bright);
+  }
+
+  /* Category pills: cyan active */
+  .cat-pill.active {
+    background: var(--cyan);
+    color: var(--bg);
+    border-color: var(--cyan);
+    font-weight: 600;
+  }
+
+  /* Sala pills: colored dot + border per sala when active */
+  .sala-pill {
+    color: var(--fg-muted);
+  }
+
+  .sala-pill .pill-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .pill-dot.dot-pacifico {
+    background: var(--sala-pacifico);
+  }
+  .pill-dot.dot-atlantico-b {
+    background: var(--sala-atlantico-b);
+  }
+  .pill-dot.dot-atlantico-c {
+    background: var(--sala-atlantico-c);
+  }
+
+  .sala-pill.active .pill-dot {
+    box-shadow: 0 0 6px currentColor;
+  }
+
+  .sala-pill[data-sala-filter='pacifico'].active {
+    color: var(--sala-pacifico);
+    border-color: var(--sala-pacifico);
+    background: var(--sala-pacifico-soft);
+  }
+  .sala-pill[data-sala-filter='atlantico-b'].active {
+    color: var(--sala-atlantico-b);
+    border-color: var(--sala-atlantico-b);
+    background: var(--sala-atlantico-b-soft);
+  }
+  .sala-pill[data-sala-filter='atlantico-c'].active {
+    color: var(--sala-atlantico-c);
+    border-color: var(--sala-atlantico-c);
+    background: var(--sala-atlantico-c-soft);
+  }
+
+  .sala-pill:not(.active) {
+    opacity: 0.55;
+  }
+
+  .sala-pill:not(.active) .pill-dot {
+    opacity: 0.4;
+  }
+
+  .schedule {
+    padding: var(--s-4) 0 0;
+  }
+
+  .filter-empty {
+    padding: var(--s-7) 0;
+    text-align: center;
+  }
+
+  .fe-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--t-lg);
+    letter-spacing: -0.02em;
+    color: var(--fg);
+    margin: 0 0 var(--s-2);
+  }
+
+  .fe-sub {
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    color: var(--fg-muted);
+    margin: 0 0 var(--s-4);
+  }
+
+  .fe-reset {
+    background: var(--bg-card);
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: var(--t-sm);
+    padding: var(--s-3) var(--s-5);
+    border-radius: var(--r-pill);
+    cursor: pointer;
+    min-height: var(--touch-min);
+  }
+
+  .fe-reset:hover {
+    background: var(--cyan);
+    color: var(--bg);
+  }
+
+  .hour-group {
+    margin-bottom: var(--s-5);
+  }
+
+  .hour-group.empty {
+    display: none;
+  }
+
+  .hour-header {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    margin-bottom: var(--s-3);
+  }
+
+  .hour-time {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: var(--t-sm);
+    color: var(--fg);
+    background: var(--bg-elev);
+    padding: var(--s-1) var(--s-2);
+    border-radius: var(--r-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hour-line {
+    flex: 1;
+    height: 1px;
+    background: var(--hair);
+  }
+
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+</style>
+
+<script>
+  // Combined filter: sala (multi-select toggles, all on by default)
+  // + categoría (single-select with "all").
+  const activeSalas = new Set<string>(['pacifico', 'atlantico-b', 'atlantico-c']);
+  let activeCat = 'all';
+
+  function applyFilters() {
+    const cards = document.querySelectorAll<HTMLElement>('.session-card');
+    const groups = document.querySelectorAll<HTMLElement>('.hour-group');
+    let totalVisible = 0;
+
+    cards.forEach((card) => {
+      const sala = card.dataset.sala ?? '';
+      const cat = card.dataset.cat ?? '';
+      const alt = (card.dataset.catAlt ?? '').split(',').filter(Boolean);
+
+      const salaOk = activeSalas.has(sala);
+      const catOk = activeCat === 'all' || cat === activeCat || alt.includes(activeCat);
+      const visible = salaOk && catOk;
+
+      card.style.display = visible ? '' : 'none';
+      if (visible) totalVisible++;
+    });
+
+    groups.forEach((g) => {
+      const visible = Array.from(g.querySelectorAll<HTMLElement>('.session-card')).some(
+        (c) => c.style.display !== 'none',
+      );
+      g.classList.toggle('empty', !visible);
+    });
+
+    const emptyEl = document.getElementById('filter-empty');
+    const schedule = document.querySelector<HTMLElement>('.schedule');
+    if (emptyEl && schedule) {
+      const isEmpty = totalVisible === 0;
+      emptyEl.hidden = !isEmpty;
+      schedule.hidden = isEmpty;
+    }
+  }
+
+  function resetFilters() {
+    activeSalas.clear();
+    activeSalas.add('pacifico');
+    activeSalas.add('atlantico-b');
+    activeSalas.add('atlantico-c');
+    activeCat = 'all';
+    document.querySelectorAll<HTMLButtonElement>('.sala-pill').forEach((p) => {
+      p.classList.add('active');
+      p.setAttribute('aria-pressed', 'true');
+    });
+    document.querySelectorAll<HTMLButtonElement>('.cat-pill').forEach((p) => {
+      const isAll = p.dataset.filter === 'all';
+      p.classList.toggle('active', isAll);
+      p.setAttribute('aria-selected', String(isAll));
+    });
+    applyFilters();
+  }
+
+  function setupSalaFilters() {
+    const pills = document.querySelectorAll<HTMLButtonElement>('.sala-pill');
+    pills.forEach((pill) => {
+      pill.addEventListener('click', () => {
+        const sala = pill.dataset.salaFilter;
+        if (!sala) return;
+        if (activeSalas.has(sala)) {
+          if (activeSalas.size > 1) activeSalas.delete(sala);
+        } else {
+          activeSalas.add(sala);
+        }
+        const isActive = activeSalas.has(sala);
+        pill.classList.toggle('active', isActive);
+        pill.setAttribute('aria-pressed', String(isActive));
+        applyFilters();
+      });
+    });
+  }
+
+  function setupCatFilters() {
+    const pills = document.querySelectorAll<HTMLButtonElement>('.cat-pill');
+    pills.forEach((pill) => {
+      pill.addEventListener('click', () => {
+        const filter = pill.dataset.filter ?? 'all';
+        activeCat = filter;
+        pills.forEach((p) => {
+          const isActive = p === pill;
+          p.classList.toggle('active', isActive);
+          p.setAttribute('aria-selected', String(isActive));
+        });
+        applyFilters();
+      });
+    });
+  }
+
+  function setupReset() {
+    document.getElementById('filter-reset')?.addEventListener('click', resetFilters);
+  }
+
+  function init() {
+    setupSalaFilters();
+    setupCatFilters();
+    setupReset();
+    applyFilters();
+  }
+
+  document.addEventListener('astro:page-load', init);
+  init();
+</script>

@@ -1,0 +1,125 @@
+---
+interface Props {
+  /** Optional override for status pill text */
+  status?: string;
+}
+const { status } = Astro.props;
+---
+
+<div class="ticker" transition:persist="ticker">
+  <a class="logo" href="/">
+    aifi<span class="accent">/26</span>
+  </a>
+  <div class="divider" aria-hidden="true"></div>
+  <time class="clock" id="ticker-clock" datetime="2026-05-21">21 may</time>
+  <div class="meta">Hilton · BA</div>
+
+  {status && <div class="status-pill" role="status">{status}</div>}
+</div>
+
+<style>
+  .ticker {
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--hair);
+    padding: var(--s-3) var(--s-4);
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: blur(8px);
+  }
+
+  .logo {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--t-md);
+    letter-spacing: -0.03em;
+    color: var(--fg);
+    text-decoration: none;
+  }
+
+  .logo .accent {
+    color: var(--cyan);
+  }
+
+  .divider {
+    width: 1px;
+    height: 16px;
+    background: var(--hair-bright);
+  }
+
+  .clock {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--t-md);
+    letter-spacing: -0.02em;
+    color: var(--cyan);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .meta {
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-left: auto;
+    font-family: var(--font-mono);
+  }
+
+  .status-pill {
+    font-size: var(--t-xs);
+    color: var(--magenta);
+    font-weight: 600;
+    padding: var(--s-1) var(--s-3);
+    border: 1px solid var(--magenta);
+    border-radius: var(--r-pill);
+    background: rgba(251, 74, 168, 0.08);
+  }
+</style>
+
+<script>
+  // Live clock during event window — updates ticker text per minute.
+  // Hardcoded BA timezone for consistency regardless of device clock.
+  function getTickerNow() {
+    const params = new URLSearchParams(window.location.search);
+    const override = params.get('now');
+    if (override) {
+      const d = new Date(override);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return new Date();
+  }
+
+  function updateClock() {
+    const el = document.getElementById('ticker-clock');
+    if (!el) return;
+    const now = getTickerNow();
+    const fmt = new Intl.DateTimeFormat('es-AR', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    const eventDate = new Intl.DateTimeFormat('es-AR', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(now);
+
+    if (eventDate === '21/5/2026' || eventDate === '21/05/2026') {
+      el.textContent = fmt.format(now);
+      el.setAttribute('datetime', now.toISOString());
+    }
+  }
+
+  function setupClock() {
+    updateClock();
+    setInterval(updateClock, 60_000);
+  }
+
+  document.addEventListener('astro:page-load', setupClock);
+  setupClock();
+</script>

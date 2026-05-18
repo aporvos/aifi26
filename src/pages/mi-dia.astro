@@ -1,0 +1,1417 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Ticker from '../components/Ticker.astro';
+import ModeToggle from '../components/ModeToggle.astro';
+import sesionesData from '../data/sesiones.json';
+import speakersData from '../data/speakers.json';
+import { SALA_NOMBRE, type Sesion, type Speaker } from '../types';
+
+const sesiones = sesionesData as Sesion[];
+const speakers = speakersData as Speaker[];
+---
+
+<Layout
+  title="Mi día · AIFI26"
+  description="Tu agenda personalizada de AIFI26."
+>
+  <Ticker />
+  <ModeToggle active="mi-dia" />
+
+  <div id="import-prompt" class="import-prompt" hidden>
+    <div class="container">
+      <p class="prompt-title">Estás viendo una agenda compartida.</p>
+      <p class="prompt-sub" id="prompt-sub"></p>
+      <div class="prompt-actions">
+        <button class="btn btn-primary" data-action="replace" type="button">Reemplazar la mía</button>
+        <button class="btn" data-action="merge" type="button">Agregar a la mía</button>
+        <button class="btn btn-ghost" data-action="cancel" type="button">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <header class="hero">
+    <div class="container">
+      <p class="eyebrow">jueves 21 mayo · Hilton BA</p>
+      <h1 class="title">Tu día</h1>
+
+      <ul class="stats" id="stats" aria-label="Resumen de tu agenda">
+        <li class="stat">
+          <span class="stat-num" id="stat-count">0</span>
+          <span class="stat-label">sesiones</span>
+        </li>
+        <li class="stat stat-conflict" id="stat-conflict-li" hidden>
+          <span class="stat-num" id="stat-conflict">0</span>
+          <span class="stat-label">conflictos</span>
+        </li>
+        <li class="stat">
+          <span class="stat-num" id="stat-duration">--</span>
+          <span class="stat-label">total</span>
+        </li>
+        <li class="stat" id="stat-spread-li" hidden>
+          <span class="stat-num" id="stat-spread">--</span>
+          <span class="stat-label">cubierto</span>
+        </li>
+      </ul>
+    </div>
+  </header>
+
+  <section id="empty-state" class="empty-state" hidden>
+    <div class="container">
+      <div class="empty-art" aria-hidden="true">
+        <span class="ea-block ea-1"></span>
+        <span class="ea-block ea-2"></span>
+        <span class="ea-block ea-3"></span>
+      </div>
+      <h2 class="empty-title">Tu día está vacío</h2>
+      <p class="empty-sub">Andá a Día completo, tocá las charlas que querés ver, y volvé.<br />Detectamos conflictos solos.</p>
+      <a class="btn btn-primary" href="/dia">Armar mi día →</a>
+    </div>
+  </section>
+
+  <section
+    id="conflict-section"
+    class="conflict-section"
+    aria-label="Conflictos a resolver"
+    hidden
+  >
+    <div class="container">
+      <header class="cs-head">
+        <span class="cs-tag">⚠ decisiones por tomar</span>
+        <h2 class="cs-title" id="conflict-title">2 conflictos</h2>
+        <p class="cs-sub">Dos charlas se pisan al mismo tiempo. Decidí cuál te quedás.</p>
+      </header>
+      <div id="conflict-list" class="conflict-list"></div>
+    </div>
+  </section>
+
+  <section id="timeline-section" class="timeline-section" aria-label="Tu agenda" hidden>
+    <div class="container">
+      <header class="ts-head">
+        <h2 class="ts-title">Cronológicamente</h2>
+      </header>
+      <ol id="timeline-list" class="timeline-list"></ol>
+    </div>
+  </section>
+
+  <section id="actions-bar" class="actions-bar" aria-label="Acciones" hidden>
+    <div class="container">
+      <div class="actions">
+        <button class="btn btn-primary" id="share-btn" type="button">
+          <span class="btn-icon" aria-hidden="true">↗</span> Compartir mi día
+        </button>
+        <button class="btn" id="ics-btn" type="button">
+          <span class="btn-icon" aria-hidden="true">+</span> Calendario
+        </button>
+        <button class="btn btn-ghost" id="clear-btn" type="button">
+          Vaciar
+        </button>
+      </div>
+      <p class="actions-note" id="actions-status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <div id="clear-modal" class="clear-modal" hidden role="dialog" aria-modal="true" aria-labelledby="clear-title">
+    <div class="clear-backdrop" data-clear-cancel></div>
+    <div class="clear-dialog">
+      <h3 id="clear-title" class="clear-h">¿Vaciar tu día?</h3>
+      <p class="clear-p" id="clear-msg">Vas a perder las sesiones guardadas.</p>
+      <div class="clear-actions">
+        <button class="btn btn-ghost" type="button" data-clear-cancel>Cancelar</button>
+        <button class="btn btn-danger" type="button" data-clear-confirm>Sí, vaciar</button>
+      </div>
+    </div>
+  </div>
+
+  <script
+    is:inline
+    define:vars={{
+      sesionesData: sesiones,
+      speakersData: speakers,
+      SALA_NOMBRE_JS: SALA_NOMBRE,
+    }}
+  >
+    const STORAGE_KEY = 'aifi26.favorites';
+
+    function getStored() {
+      try {
+        return (localStorage.getItem(STORAGE_KEY) ?? '')
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+      } catch {
+        return [];
+      }
+    }
+
+    function setStored(ids) {
+      try {
+        localStorage.setItem(STORAGE_KEY, ids.join(','));
+      } catch {
+        /* private mode */
+      }
+    }
+
+    function getValidIds() {
+      return new Set(sesionesData.map((s) => s.id));
+    }
+
+    function filterValid(ids) {
+      const valid = getValidIds();
+      return Array.from(new Set(ids.filter((id) => valid.has(id))));
+    }
+
+    function getQueryFavorites() {
+      const params = new URLSearchParams(window.location.search);
+      const raw = params.get('s');
+      if (!raw) return null;
+      return filterValid(raw.split(',').map((x) => x.trim()).filter(Boolean));
+    }
+
+    function favSesiones(ids) {
+      return ids
+        .map((id) => sesionesData.find((s) => s.id === id))
+        .filter(Boolean)
+        .sort((a, b) => new Date(a.inicio).getTime() - new Date(b.inicio).getTime());
+    }
+
+    function hasOverlap(a, b) {
+      return new Date(a.inicio).getTime() < new Date(b.fin).getTime() &&
+        new Date(b.inicio).getTime() < new Date(a.fin).getTime();
+    }
+
+    function findConflictPairs(list) {
+      const pairs = [];
+      for (let i = 0; i < list.length; i++) {
+        for (let j = i + 1; j < list.length; j++) {
+          const a = list[i];
+          const b = list[j];
+          if (a.sala === b.sala) continue;
+          if (new Date(b.inicio).getTime() >= new Date(a.fin).getTime()) break;
+          if (hasOverlap(a, b)) pairs.push([a, b]);
+        }
+      }
+      return pairs;
+    }
+
+    function durationMin(s) {
+      return Math.round((new Date(s.fin).getTime() - new Date(s.inicio).getTime()) / 60_000);
+    }
+
+    function fmtDuration(min) {
+      if (min < 60) return `${min}m`;
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      return m === 0 ? `${h}h` : `${h}h ${m}m`;
+    }
+
+    function fmtRange(a, b) {
+      return `${a.slice(11, 16)}–${b.slice(11, 16)}`;
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function speakersInline(sesion, max = 2) {
+      const byId = new Map(speakersData.map((s) => [s.id, s]));
+      const names = sesion.speakers
+        .map((id) => byId.get(id))
+        .filter(Boolean)
+        .map((sp) => sp.nombre);
+      if (names.length === 0) return '';
+      if (names.length <= max) return names.join(' · ');
+      return `${names.slice(0, max).join(' · ')} +${names.length - max}`;
+    }
+
+    function renderStats(list, pairs) {
+      const count = list.length;
+      const totalMin = list.reduce((acc, s) => acc + durationMin(s), 0);
+      const spread = count > 0 ? fmtRange(list[0].inicio, list[list.length - 1].fin) : '--';
+
+      document.getElementById('stat-count').textContent = String(count);
+      document.getElementById('stat-duration').textContent = count > 0 ? fmtDuration(totalMin) : '--';
+
+      const spreadLi = document.getElementById('stat-spread-li');
+      const spreadEl = document.getElementById('stat-spread');
+      if (count > 0) {
+        spreadEl.textContent = spread;
+        spreadLi.hidden = false;
+      } else {
+        spreadLi.hidden = true;
+      }
+
+      const conflictLi = document.getElementById('stat-conflict-li');
+      const conflictEl = document.getElementById('stat-conflict');
+      if (pairs.length > 0) {
+        conflictEl.textContent = String(pairs.length);
+        conflictLi.hidden = false;
+      } else {
+        conflictLi.hidden = true;
+      }
+    }
+
+    function renderConflictSection(pairs) {
+      const section = document.getElementById('conflict-section');
+      const title = document.getElementById('conflict-title');
+      const list = document.getElementById('conflict-list');
+      if (!section || !list || !title) return;
+
+      if (pairs.length === 0) {
+        section.hidden = true;
+        return;
+      }
+
+      section.hidden = false;
+      title.textContent = `${pairs.length} ${pairs.length === 1 ? 'conflicto' : 'conflictos'}`;
+      list.innerHTML = '';
+
+      pairs.forEach((pair) => {
+        const [a, b] = pair;
+        const wrap = document.createElement('div');
+        wrap.className = 'conflict-pair';
+        wrap.innerHTML = `
+          <div class="cp-time">${escapeHtml(fmtRange(a.inicio, a.fin))} vs ${escapeHtml(fmtRange(b.inicio, b.fin))}</div>
+          <div class="cp-grid">
+            ${renderConflictCard(a)}
+            <div class="cp-vs" aria-hidden="true"><span>vs</span></div>
+            ${renderConflictCard(b)}
+          </div>
+        `;
+        list.appendChild(wrap);
+      });
+
+      list.querySelectorAll('[data-keep]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const keep = btn.dataset.keep;
+          const drop = btn.dataset.drop;
+          if (!keep || !drop) return;
+          const next = getStored().filter((x) => x !== drop);
+          setStored(next);
+          renderAll(next);
+        });
+      });
+    }
+
+    function renderConflictCard(s) {
+      const speakers = speakersInline(s, 2);
+      const otherId = s.id;
+      return `
+        <article class="cp-card sala-${s.sala}">
+          <header class="cpc-head">
+            <span class="cpc-sala">${escapeHtml(SALA_NOMBRE_JS[s.sala])}</span>
+            <span class="cpc-time">${escapeHtml(fmtRange(s.inicio, s.fin))}</span>
+          </header>
+          <a class="cpc-title-link" href="/sesion/${escapeHtml(s.id)}">
+            <h3 class="cpc-title">${escapeHtml(s.titulo)}</h3>
+          </a>
+          ${speakers ? `<p class="cpc-speakers">${escapeHtml(speakers)}</p>` : ''}
+          <button class="cpc-keep" data-keep="${escapeHtml(s.id)}" data-drop="__OTHER__:${escapeHtml(otherId)}" type="button">
+            Me quedo con esta →
+          </button>
+        </article>
+      `;
+    }
+
+    function renderTimeline(list) {
+      const section = document.getElementById('timeline-section');
+      const ol = document.getElementById('timeline-list');
+      if (!section || !ol) return;
+
+      if (list.length === 0) {
+        section.hidden = true;
+        return;
+      }
+      section.hidden = false;
+      ol.innerHTML = '';
+
+      // Compute conflict membership for highlighting
+      const pairs = findConflictPairs(list);
+      const inConflict = new Set();
+      for (const [a, b] of pairs) {
+        inConflict.add(a.id);
+        inConflict.add(b.id);
+      }
+
+      for (let i = 0; i < list.length; i++) {
+        const s = list[i];
+        const speakers = speakersInline(s, 3);
+        const dur = durationMin(s);
+        const conflictBadge = inConflict.has(s.id) ? `<span class="tl-conflict">⚠ conflicto</span>` : '';
+
+        const li = document.createElement('li');
+        li.className = `tl-item sala-${s.sala}` + (inConflict.has(s.id) ? ' is-conflict' : '');
+        li.innerHTML = `
+          <div class="tl-time">
+            <span class="tl-start">${escapeHtml(s.inicio.slice(11, 16))}</span>
+            <span class="tl-dur">${escapeHtml(fmtDuration(dur))}</span>
+          </div>
+          <div class="tl-bar" aria-hidden="true"></div>
+          <article class="tl-card">
+            <header class="tlc-head">
+              <span class="tlc-sala">${escapeHtml(SALA_NOMBRE_JS[s.sala])}</span>
+              ${conflictBadge}
+            </header>
+            <a class="tlc-title-link" href="/sesion/${escapeHtml(s.id)}">
+              <h3 class="tlc-title">${escapeHtml(s.titulo)}</h3>
+            </a>
+            ${speakers ? `<p class="tlc-speakers">${escapeHtml(speakers)}</p>` : ''}
+            <button class="tlc-remove" data-remove="${escapeHtml(s.id)}" type="button" aria-label="Quitar ${escapeHtml(s.titulo)} de mi día">
+              quitar
+            </button>
+          </article>
+        `;
+        ol.appendChild(li);
+
+        // Gap to next item
+        if (i < list.length - 1) {
+          const gapMs = new Date(list[i + 1].inicio).getTime() - new Date(s.fin).getTime();
+          const gapMin = Math.round(gapMs / 60_000);
+          if (gapMin >= 30) {
+            const gap = document.createElement('li');
+            gap.className = 'tl-gap';
+            const hint = gapMin >= 60 ? '· lunch / networking / café' : '· cambio de sala';
+            gap.innerHTML = `<span class="tl-gap-line" aria-hidden="true"></span><span class="tl-gap-label">${escapeHtml(fmtDuration(gapMin))} libre ${escapeHtml(hint)}</span>`;
+            ol.appendChild(gap);
+          }
+        }
+      }
+
+      ol.querySelectorAll('[data-remove]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.remove;
+          if (!id) return;
+          const next = getStored().filter((x) => x !== id);
+          setStored(next);
+          renderAll(next);
+        });
+      });
+    }
+
+    function renderEmpty(ids) {
+      const empty = document.getElementById('empty-state');
+      const actions = document.getElementById('actions-bar');
+      if (!empty || !actions) return;
+      const isEmpty = ids.length === 0;
+      empty.hidden = !isEmpty;
+      actions.hidden = isEmpty;
+    }
+
+    function renderAll(ids) {
+      const list = favSesiones(ids);
+      const pairs = findConflictPairs(list);
+      renderStats(list, pairs);
+      renderConflictSection(pairs);
+      renderTimeline(list);
+      renderEmpty(ids);
+    }
+
+    function setupImportPrompt() {
+      const queryFavs = getQueryFavorites();
+      if (!queryFavs || queryFavs.length === 0) {
+        renderAll(getStored());
+        return;
+      }
+
+      const stored = getStored();
+      if (stored.length === 0) {
+        setStored(queryFavs);
+        const url = new URL(window.location.href);
+        url.searchParams.delete('s');
+        window.history.replaceState({}, '', url.toString());
+        renderAll(queryFavs);
+        return;
+      }
+
+      const prompt = document.getElementById('import-prompt');
+      const sub = document.getElementById('prompt-sub');
+      if (!prompt || !sub) {
+        renderAll(stored);
+        return;
+      }
+
+      sub.textContent = `Tenés ${stored.length} sesiones guardadas. La compartida tiene ${queryFavs.length}.`;
+      prompt.hidden = false;
+
+      prompt.querySelectorAll('[data-action]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const action = btn.dataset.action;
+          let next = stored;
+          if (action === 'replace') next = queryFavs;
+          else if (action === 'merge') next = Array.from(new Set([...stored, ...queryFavs]));
+          if (action !== 'cancel') setStored(next);
+          prompt.hidden = true;
+          const url = new URL(window.location.href);
+          url.searchParams.delete('s');
+          window.history.replaceState({}, '', url.toString());
+          renderAll(getStored());
+        });
+      });
+
+      renderAll(stored);
+    }
+
+    function setupShare() {
+      const btn = document.getElementById('share-btn');
+      const status = document.getElementById('actions-status');
+      if (!btn || !status) return;
+
+      btn.addEventListener('click', async () => {
+        const ids = getStored();
+        const url = `${window.location.origin}/mi-dia?s=${encodeURIComponent(ids.join(','))}`;
+        const count = ids.length;
+        const text = `Mi agenda para AIFI26 (${count} ${count === 1 ? 'charla' : 'charlas'}) · 21 may, Hilton BA`;
+
+        if (navigator.share) {
+          try {
+            await navigator.share({ title: 'AIFI26', text, url });
+            status.textContent = '✓ compartido';
+            setTimeout(() => (status.textContent = ''), 3000);
+            return;
+          } catch (err) {
+            if (err && err.name === 'AbortError') {
+              status.textContent = '';
+              return;
+            }
+          }
+        }
+
+        try {
+          await navigator.clipboard.writeText(url);
+          status.textContent = '✓ link copiado al portapapeles';
+          setTimeout(() => (status.textContent = ''), 3000);
+        } catch {
+          status.textContent = url;
+        }
+      });
+    }
+
+    function escapeIcs(s) {
+      return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+    }
+
+    function toIcsLocal(iso) {
+      const [date, time] = iso.replace('-03:00', '').split('T');
+      return `${date.replace(/-/g, '')}T${time.replace(/:/g, '')}`;
+    }
+
+    function buildAndDownloadIcs(ids) {
+      const speakersById = new Map(speakersData.map((s) => [s.id, s]));
+      const my = sesionesData.filter((s) => ids.includes(s.id));
+      const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+      const events = my.map((s) => {
+        const desc = [
+          s.descripcion ?? '',
+          '',
+          'Speakers:',
+          ...s.speakers.map((id) => speakersById.get(id)).filter(Boolean).map((sp) => `· ${sp.nombre} — ${sp.rol}`),
+          s.moderador && speakersById.get(s.moderador)
+            ? `Moderador: ${speakersById.get(s.moderador).nombre} — ${speakersById.get(s.moderador).rol}`
+            : '',
+        ].filter(Boolean).join('\n');
+        return [
+          'BEGIN:VEVENT',
+          `UID:${s.id}@aifi26`,
+          `DTSTAMP:${stamp}`,
+          `DTSTART;TZID=America/Argentina/Buenos_Aires:${toIcsLocal(s.inicio)}`,
+          `DTEND;TZID=America/Argentina/Buenos_Aires:${toIcsLocal(s.fin)}`,
+          `SUMMARY:${escapeIcs(s.titulo)}`,
+          `LOCATION:${escapeIcs('Salón ' + SALA_NOMBRE_JS[s.sala] + ' · Hotel Hilton Buenos Aires')}`,
+          `DESCRIPTION:${escapeIcs(desc)}`,
+          'END:VEVENT',
+        ].join('\r\n');
+      }).join('\r\n');
+
+      const body = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//AIFI26//cronograma no oficial//ES',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        events,
+        'END:VCALENDAR',
+      ].join('\r\n');
+
+      const blob = new Blob([body], { type: 'text/calendar' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'aifi26-mi-dia.ics';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function setupIcs() {
+      const btn = document.getElementById('ics-btn');
+      const status = document.getElementById('actions-status');
+      if (!btn || !status) return;
+      btn.addEventListener('click', () => {
+        const ids = getStored();
+        if (ids.length === 0) return;
+        buildAndDownloadIcs(ids);
+        status.textContent = '✓ agenda descargada';
+        setTimeout(() => (status.textContent = ''), 3000);
+      });
+    }
+
+    function openClearModal() {
+      const modal = document.getElementById('clear-modal');
+      const msg = document.getElementById('clear-msg');
+      const ids = getStored();
+      if (!modal || ids.length === 0) return;
+      if (msg) {
+        msg.textContent = `Vas a perder ${ids.length} ${ids.length === 1 ? 'sesión guardada' : 'sesiones guardadas'}.`;
+      }
+      modal.hidden = false;
+      document.body.style.overflow = 'hidden';
+      modal.querySelector('[data-clear-confirm]').focus();
+    }
+
+    function closeClearModal() {
+      const modal = document.getElementById('clear-modal');
+      if (!modal) return;
+      modal.hidden = true;
+      document.body.style.overflow = '';
+      document.getElementById('clear-btn')?.focus();
+    }
+
+    function setupClear() {
+      const btn = document.getElementById('clear-btn');
+      const modal = document.getElementById('clear-modal');
+      if (!btn || !modal) return;
+
+      btn.addEventListener('click', () => openClearModal());
+
+      modal.querySelectorAll('[data-clear-cancel]').forEach((el) => {
+        el.addEventListener('click', closeClearModal);
+      });
+
+      modal.querySelector('[data-clear-confirm]')?.addEventListener('click', () => {
+        setStored([]);
+        renderAll([]);
+        closeClearModal();
+        const status = document.getElementById('actions-status');
+        if (status) {
+          status.textContent = '✓ tu día está vacío';
+          setTimeout(() => (status.textContent = ''), 3000);
+        }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (!modal.hidden) closeClearModal();
+      });
+    }
+
+    function init() {
+      setupImportPrompt();
+      setupShare();
+      setupIcs();
+      setupClear();
+    }
+
+    document.addEventListener('astro:page-load', init);
+    init();
+  </script>
+</Layout>
+
+<style>
+  .container {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding: 0 var(--s-4);
+  }
+
+  /* IMPORT PROMPT */
+  .import-prompt {
+    background: rgba(15, 179, 252, 0.08);
+    border-bottom: 1px solid var(--cyan);
+    padding: var(--s-4) 0;
+  }
+
+  .prompt-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--t-md);
+    color: var(--fg);
+    margin: 0 0 var(--s-2);
+  }
+
+  .prompt-sub {
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    color: var(--fg-soft);
+    margin: 0 0 var(--s-3);
+  }
+
+  .prompt-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+
+  /* HERO */
+  .hero {
+    padding: var(--s-5) 0 var(--s-4);
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 var(--s-2);
+  }
+
+  .title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--t-3xl);
+    letter-spacing: -0.035em;
+    line-height: 0.95;
+    margin: 0 0 var(--s-5);
+    color: var(--fg);
+  }
+
+  .stats {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--s-3);
+  }
+
+  @media (min-width: 480px) {
+    .stats {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .stat {
+    background: var(--bg-card);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-md);
+    padding: var(--s-3);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-num {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--t-xl);
+    line-height: 1;
+    color: var(--fg);
+    letter-spacing: -0.025em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .stat-conflict {
+    background: rgba(251, 74, 168, 0.08);
+    border-color: var(--magenta);
+  }
+
+  .stat-conflict .stat-num {
+    color: var(--magenta);
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    padding: var(--s-7) 0;
+    text-align: center;
+  }
+
+  .empty-art {
+    display: flex;
+    justify-content: center;
+    gap: var(--s-2);
+    margin-bottom: var(--s-5);
+    opacity: 0.6;
+  }
+
+  .ea-block {
+    display: block;
+    width: 80px;
+    height: 14px;
+    border-radius: var(--r-sm);
+    border: 1.5px dashed;
+  }
+
+  .ea-1 {
+    color: var(--sala-pacifico);
+    width: 100px;
+  }
+
+  .ea-2 {
+    color: var(--sala-atlantico-b);
+    width: 70px;
+  }
+
+  .ea-3 {
+    color: var(--sala-atlantico-c);
+    width: 90px;
+  }
+
+  .empty-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--t-xl);
+    letter-spacing: -0.025em;
+    color: var(--fg);
+    margin: 0 0 var(--s-3);
+  }
+
+  .empty-sub {
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    color: var(--fg-muted);
+    margin: 0 0 var(--s-5);
+    line-height: 1.5;
+  }
+
+  /* CONFLICT SECTION */
+  .conflict-section {
+    padding: var(--s-5) 0;
+    background: linear-gradient(180deg, rgba(251, 74, 168, 0.04) 0%, transparent 100%);
+  }
+
+  .cs-head {
+    margin-bottom: var(--s-4);
+  }
+
+  .cs-tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--magenta);
+    background: rgba(251, 74, 168, 0.12);
+    border: 1px solid var(--magenta);
+    padding: 3px var(--s-2);
+    border-radius: var(--r-pill);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: var(--s-3);
+  }
+
+  .cs-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--t-xl);
+    letter-spacing: -0.025em;
+    color: var(--fg);
+    margin: 0 0 var(--s-2);
+  }
+
+  .cs-sub {
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    color: var(--fg-muted);
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .conflict-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-5);
+  }
+
+  .conflict-pair {
+    background: var(--bg-card);
+    border: 1px solid var(--magenta);
+    border-radius: var(--r-lg);
+    padding: var(--s-4);
+  }
+
+  .cp-time {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--magenta);
+    text-align: center;
+    margin-bottom: var(--s-3);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+
+  .cp-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--s-3);
+  }
+
+  .cp-vs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .cp-vs::before,
+  .cp-vs::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: var(--hair-bright);
+  }
+
+  .cp-vs span {
+    position: relative;
+    z-index: 1;
+    background: var(--bg-card);
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 0 var(--s-2);
+  }
+
+  @media (min-width: 600px) {
+    .cp-grid {
+      grid-template-columns: 1fr 40px 1fr;
+      align-items: stretch;
+    }
+
+    .cp-vs::before,
+    .cp-vs::after {
+      left: 50%;
+      right: auto;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      height: auto;
+    }
+
+    .cp-vs::before {
+      bottom: calc(50% + 14px);
+    }
+
+    .cp-vs::after {
+      top: calc(50% + 14px);
+    }
+  }
+
+  .cp-card {
+    background: var(--bg);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-md);
+    padding: var(--s-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cp-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 3px;
+    background: currentColor;
+  }
+
+  .cp-card.sala-pacifico {
+    color: var(--sala-pacifico);
+  }
+  .cp-card.sala-atlantico-b {
+    color: var(--sala-atlantico-b);
+  }
+  .cp-card.sala-atlantico-c {
+    color: var(--sala-atlantico-c);
+  }
+
+  .cpc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: var(--s-2);
+  }
+
+  .cpc-sala {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    color: currentColor;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .cpc-time {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cpc-title-link {
+    text-decoration: none;
+    color: inherit;
+    padding-left: var(--s-2);
+  }
+
+  .cpc-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--t-md);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--fg);
+    margin: 0;
+  }
+
+  .cpc-title-link:hover .cpc-title {
+    color: var(--cyan);
+  }
+
+  .cpc-speakers {
+    font-family: var(--font-body);
+    font-size: var(--t-xs);
+    color: var(--fg-soft);
+    margin: 0;
+    padding-left: var(--s-2);
+    line-height: 1.4;
+  }
+
+  .cpc-keep {
+    margin-top: auto;
+    background: var(--bg-card);
+    border: 1px solid currentColor;
+    color: currentColor;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: var(--t-xs);
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--r-pill);
+    cursor: pointer;
+    min-height: 36px;
+    margin-left: var(--s-2);
+    margin-right: var(--s-2);
+    text-align: center;
+    transition: all var(--m-fast) var(--m-ease);
+  }
+
+  .cpc-keep:hover {
+    background: currentColor;
+  }
+
+  .cp-card.sala-pacifico .cpc-keep:hover {
+    color: var(--bg);
+  }
+  .cp-card.sala-atlantico-b .cpc-keep:hover {
+    color: var(--bg);
+  }
+  .cp-card.sala-atlantico-c .cpc-keep:hover {
+    color: var(--bg);
+  }
+
+  /* TIMELINE */
+  .timeline-section {
+    padding: var(--s-5) 0;
+    border-top: 1px solid var(--hair);
+  }
+
+  .ts-head {
+    margin-bottom: var(--s-4);
+  }
+
+  .ts-title {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    color: var(--fg-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin: 0;
+  }
+
+  .timeline-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .tl-item {
+    display: grid;
+    grid-template-columns: 56px 8px 1fr;
+    gap: var(--s-3);
+    padding: 0 0 var(--s-3);
+    position: relative;
+  }
+
+  .tl-time {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    padding-top: var(--s-3);
+  }
+
+  .tl-start {
+    font-family: var(--font-mono);
+    font-size: var(--t-sm);
+    font-weight: 700;
+    color: var(--fg);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .tl-dur {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--fg-dim);
+    letter-spacing: 0.04em;
+  }
+
+  .tl-bar {
+    background: currentColor;
+    border-radius: var(--r-pill);
+    margin: var(--s-3) 0 var(--s-2);
+    align-self: stretch;
+    width: 4px;
+    justify-self: center;
+  }
+
+  .tl-item.sala-pacifico .tl-bar {
+    background: var(--sala-pacifico);
+    box-shadow: 0 0 8px var(--sala-pacifico);
+  }
+  .tl-item.sala-atlantico-b .tl-bar {
+    background: var(--sala-atlantico-b);
+    box-shadow: 0 0 8px var(--sala-atlantico-b);
+  }
+  .tl-item.sala-atlantico-c .tl-bar {
+    background: var(--sala-atlantico-c);
+    box-shadow: 0 0 8px var(--sala-atlantico-c);
+  }
+
+  .tl-card {
+    background: var(--bg-card);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-md);
+    padding: var(--s-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+    transition: border-color var(--m-fast) var(--m-ease);
+  }
+
+  .tl-card:hover {
+    border-color: var(--hair-bright);
+  }
+
+  .tl-item.is-conflict .tl-card {
+    border-color: var(--magenta);
+    background: rgba(251, 74, 168, 0.04);
+  }
+
+  .tlc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-2);
+    flex-wrap: wrap;
+  }
+
+  .tlc-sala {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .tl-item.sala-pacifico .tlc-sala {
+    color: var(--sala-pacifico);
+  }
+  .tl-item.sala-atlantico-b .tlc-sala {
+    color: var(--sala-atlantico-b);
+  }
+  .tl-item.sala-atlantico-c .tlc-sala {
+    color: var(--sala-atlantico-c);
+  }
+
+  .tl-conflict {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--magenta);
+    background: rgba(251, 74, 168, 0.1);
+    border: 1px solid var(--magenta);
+    padding: 2px var(--s-2);
+    border-radius: var(--r-sm);
+    letter-spacing: 0.04em;
+  }
+
+  .tlc-title-link {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .tlc-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--t-md);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--fg);
+    margin: 0;
+  }
+
+  .tlc-title-link:hover .tlc-title {
+    color: var(--cyan);
+  }
+
+  .tlc-speakers {
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    color: var(--fg-soft);
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .tlc-remove {
+    align-self: flex-start;
+    background: transparent;
+    border: 1px solid var(--hair-bright);
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    padding: var(--s-1) var(--s-2);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    min-height: 28px;
+    margin-top: var(--s-1);
+    transition: all var(--m-fast) var(--m-ease);
+  }
+
+  .tlc-remove:hover {
+    color: var(--magenta);
+    border-color: var(--magenta);
+  }
+
+  /* GAPS */
+  .tl-gap {
+    display: grid;
+    grid-template-columns: 56px 8px 1fr;
+    gap: var(--s-3);
+    align-items: center;
+    margin: var(--s-2) 0;
+  }
+
+  .tl-gap-line {
+    grid-column: 2;
+    width: 4px;
+    height: 24px;
+    justify-self: center;
+    background-image: linear-gradient(to bottom, transparent 0, transparent 4px, var(--hair-bright) 4px, var(--hair-bright) 8px);
+    background-size: 4px 8px;
+    background-repeat: repeat-y;
+  }
+
+  .tl-gap-label {
+    grid-column: 3;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+    letter-spacing: 0;
+  }
+
+  /* ACTIONS BAR */
+  .actions-bar {
+    padding: var(--s-5) 0 var(--s-7);
+    border-top: 1px solid var(--hair);
+    margin-top: var(--s-4);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+
+  .actions .btn {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .actions .btn-ghost {
+    flex: 0 0 auto;
+    min-width: auto;
+  }
+
+  .actions-note {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    margin-top: var(--s-3);
+    min-height: 1.4em;
+    text-align: center;
+  }
+
+  .btn {
+    background: var(--bg-card);
+    border: 1px solid var(--hair-bright);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: var(--t-sm);
+    padding: var(--s-3) var(--s-4);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    min-height: var(--touch-min);
+    letter-spacing: -0.01em;
+    transition: all var(--m-fast) var(--m-ease);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s-2);
+  }
+
+  .btn:hover {
+    border-color: var(--cyan);
+  }
+
+  .btn-primary {
+    background: var(--cyan);
+    color: var(--bg);
+    border-color: var(--cyan);
+  }
+
+  .btn-primary:hover {
+    background: var(--mint);
+    border-color: var(--mint);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border-color: var(--hair);
+    color: var(--fg-muted);
+  }
+
+  .btn-ghost:hover {
+    color: var(--magenta);
+    border-color: var(--magenta);
+  }
+
+  .btn-icon {
+    font-weight: 700;
+    font-size: var(--t-md);
+    line-height: 1;
+  }
+
+  .btn-danger {
+    background: var(--magenta);
+    border-color: var(--magenta);
+    color: var(--bg);
+  }
+
+  .btn-danger:hover {
+    background: #ff5fb6;
+    border-color: #ff5fb6;
+  }
+
+  /* CLEAR MODAL */
+  .clear-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--s-4);
+    animation: clearFadeIn 200ms var(--m-ease);
+  }
+
+  .clear-modal[hidden] {
+    display: none;
+  }
+
+  @keyframes clearFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .clear-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(13, 13, 20, 0.85);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .clear-dialog {
+    position: relative;
+    background: var(--bg-card);
+    border: 1px solid var(--magenta);
+    border-radius: var(--r-lg);
+    padding: var(--s-5) var(--s-4);
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+    animation: clearSlideUp 240ms var(--m-spring);
+  }
+
+  @keyframes clearSlideUp {
+    from {
+      transform: translateY(16px) scale(0.96);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  }
+
+  .clear-h {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--t-xl);
+    letter-spacing: -0.025em;
+    margin: 0 0 var(--s-2);
+    color: var(--fg);
+  }
+
+  .clear-p {
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    color: var(--fg-soft);
+    margin: 0 0 var(--s-5);
+    line-height: 1.5;
+  }
+
+  .clear-actions {
+    display: flex;
+    gap: var(--s-2);
+  }
+
+  .clear-actions .btn {
+    flex: 1;
+  }
+</style>

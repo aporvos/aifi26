@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0d0d14"/>
+      <stop offset="1" stop-color="#1a1923"/>
+    </linearGradient>
+    <radialGradient id="cyanGlow" cx="200" cy="500" r="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0fb3fc" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#0fb3fc" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="magentaGlow" cx="1100" cy="120" r="380" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fb4aa8" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#fb4aa8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+  <rect width="1200" height="630" fill="url(#cyanGlow)"/>
+  <rect width="1200" height="630" fill="url(#magentaGlow)"/>
+
+  <!-- Top ticker bar -->
+  <rect x="0" y="0" width="1200" height="60" fill="#1a1923"/>
+  <line x1="0" y1="60" x2="1200" y2="60" stroke="#2a2a36"/>
+
+  <text x="60" y="40" font-family="ui-monospace, monospace" font-size="14" fill="#8f94a1" letter-spacing="2">CRONOGRAMA NO OFICIAL</text>
+  <text x="1140" y="40" text-anchor="end" font-family="ui-monospace, monospace" font-size="14" fill="#8f94a1" letter-spacing="2">21 MAY · HILTON BA</text>
+
+  <!-- Brand -->
+  <text x="60" y="220" font-family="'Bricolage Grotesque', system-ui, sans-serif" font-size="180" font-weight="700" letter-spacing="-8" fill="#f7f7f8">aifi<tspan fill="#0fb3fc">/26</tspan></text>
+
+  <!-- Sub -->
+  <text x="60" y="290" font-family="'DM Sans', system-ui, sans-serif" font-size="32" font-weight="500" fill="#adb8d5">redefiniendo finance con IA</text>
+
+  <!-- Status row -->
+  <g transform="translate(60, 400)">
+    <rect x="0" y="0" width="14" height="14" rx="7" fill="#0fb3fc"/>
+    <text x="28" y="13" font-family="ui-monospace, monospace" font-size="20" fill="#f7f7f8" font-weight="600">28 sesiones · 3 salas · 1 día</text>
+  </g>
+
+  <g transform="translate(60, 450)">
+    <rect x="0" y="0" width="14" height="14" rx="7" fill="#1331f4"/>
+    <text x="28" y="13" font-family="ui-monospace, monospace" font-size="20" fill="#f7f7f8" font-weight="600">Pacífico · Atlántico B · Atlántico C</text>
+  </g>
+
+  <g transform="translate(60, 500)">
+    <rect x="0" y="0" width="14" height="14" rx="7" fill="#fb4aa8"/>
+    <text x="28" y="13" font-family="ui-monospace, monospace" font-size="20" fill="#f7f7f8" font-weight="600">"Ahora" en tiempo real durante el evento</text>
+  </g>
+
+  <!-- Author footer -->
+  <line x1="60" y1="570" x2="1140" y2="570" stroke="#2a2a36"/>
+  <text x="60" y="605" font-family="'DM Sans', system-ui, sans-serif" font-size="16" fill="#7a7f8c">hecho por @gonzaloarribere</text>
+  <text x="1140" y="605" text-anchor="end" font-family="'DM Sans', system-ui, sans-serif" font-size="16" fill="#0fb3fc" font-weight="600">aifi26 · cronograma</text>
+</svg>

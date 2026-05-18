@@ -1,0 +1,106 @@
+---
+// Renders an auto-banner that switches state at runtime based on the BA clock.
+// Initial render is hidden; JS populates with the right copy after page-load.
+---
+
+<div id="app-state-banner" class="state-banner" role="region" aria-label="Estado del evento" hidden>
+  <div class="sb-inner">
+    <span class="sb-dot" aria-hidden="true"></span>
+    <span class="sb-text" id="state-banner-text"></span>
+  </div>
+</div>
+
+<script is:inline>
+  (function () {
+    const EVENT_START = new Date('2026-05-21T08:00:00-03:00').getTime();
+    const EVENT_END = new Date('2026-05-21T17:30:00-03:00').getTime();
+
+    function tick() {
+      const banner = document.getElementById('app-state-banner');
+      const text = document.getElementById('state-banner-text');
+      if (!banner || !text) return;
+
+      const t = Date.now();
+
+      if (t < EVENT_START) {
+        const hoursLeft = Math.ceil((EVENT_START - t) / 3_600_000);
+        if (hoursLeft <= 48) {
+          banner.classList.remove('state-post');
+          banner.classList.add('state-pre');
+          text.textContent =
+            hoursLeft <= 1
+              ? `AIFI26 arranca en menos de 1 hora · acreditaciones desde 08:00`
+              : `AIFI26 arranca en ~${hoursLeft} horas · acreditaciones desde 08:00`;
+          banner.hidden = false;
+          return;
+        }
+      }
+
+      if (t > EVENT_END) {
+        banner.classList.remove('state-pre');
+        banner.classList.add('state-post');
+        text.textContent = `AIFI26 terminó · cronograma en modo archivo`;
+        banner.hidden = false;
+        // Hide Mi día toggle option in archive mode
+        document.querySelectorAll('a.mode[href="/mi-dia"]').forEach((el) => {
+          (el).style.display = 'none';
+        });
+        return;
+      }
+
+      banner.hidden = true;
+    }
+
+    document.addEventListener('astro:page-load', tick);
+    tick();
+  })();
+</script>
+
+<style>
+  .state-banner {
+    border-bottom: 1px solid var(--hair);
+    padding: var(--s-3) var(--s-4);
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+  }
+
+  .sb-inner {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+  }
+
+  .sb-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .state-pre {
+    background: rgba(15, 179, 252, 0.08);
+  }
+
+  .state-pre .sb-dot {
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+  }
+
+  .state-pre .sb-text {
+    color: var(--fg);
+  }
+
+  .state-post {
+    background: rgba(122, 127, 140, 0.1);
+  }
+
+  .state-post .sb-dot {
+    background: var(--fg-dim);
+  }
+
+  .state-post .sb-text {
+    color: var(--fg-muted);
+  }
+</style>

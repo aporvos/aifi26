@@ -1,0 +1,129 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import AvisoBanner from '../components/AvisoBanner.astro';
+import AppStateBanner from '../components/AppStateBanner.astro';
+import '../styles/tokens.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+}
+
+const {
+  title = 'AIFI26 · cronograma',
+  description = 'Cronograma no oficial de AIFI26 · 21 mayo 2026 · Hotel Hilton Buenos Aires.',
+  ogImage = '/og.svg',
+} = Astro.props;
+
+const fullTitle = title.includes('AIFI26') ? title : `${title} · AIFI26`;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0d0d14" />
+
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content="es_AR" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Inter+Tight:ital,wght@1,400;1,500&display=swap"
+      rel="stylesheet"
+    />
+
+    <ClientRouter />
+  </head>
+  <body>
+    <a class="visually-hidden skip-link" href="#main">Saltar al contenido</a>
+    <AppStateBanner />
+    <AvisoBanner />
+    <main id="main" transition:name="main-content"><slot /></main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p>
+          AIFI26 · cronograma no oficial · hecho por
+          <a href="https://www.linkedin.com/in/gonzaloarribere/" rel="me noopener" target="_blank">@gonzaloarribere</a>
+        </p>
+        <p class="footer-meta">
+          <a href="/sobre">sobre este proyecto</a> · <a href="https://aifi.lat" target="_blank" rel="noopener">aifi.lat oficial</a>
+        </p>
+      </div>
+    </footer>
+
+    <style>
+      .container {
+        max-width: var(--container-max);
+        margin: 0 auto;
+        padding: 0 var(--s-4);
+      }
+
+      .skip-link:focus-visible {
+        position: fixed;
+        top: var(--s-3);
+        left: var(--s-3);
+        width: auto;
+        height: auto;
+        padding: var(--s-2) var(--s-4);
+        background: var(--cyan);
+        color: var(--bg);
+        clip: auto;
+        z-index: 100;
+        border-radius: var(--r-sm);
+      }
+
+      .site-footer {
+        margin-top: var(--s-8);
+        padding: var(--s-6) 0 var(--s-7);
+        border-top: 1px solid var(--hair);
+        text-align: center;
+        font-size: var(--t-xs);
+        color: var(--fg-dim);
+        font-family: var(--font-mono);
+        letter-spacing: 0.02em;
+      }
+
+      .site-footer p {
+        margin: 0;
+      }
+
+      .site-footer p + p {
+        margin-top: var(--s-2);
+      }
+
+      .footer-meta {
+        font-family: var(--font-body);
+        font-size: var(--t-xs);
+      }
+
+      .site-footer a {
+        color: var(--cyan);
+        text-decoration: none;
+      }
+
+      .site-footer a:hover {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+    </style>
+  </body>
+</html>

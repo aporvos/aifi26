@@ -1,0 +1,818 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Ticker from '../components/Ticker.astro';
+import ModeToggle from '../components/ModeToggle.astro';
+import sesionesData from '../data/sesiones.json';
+import { SALA_NOMBRE, type SalaSlug, type Sesion } from '../types';
+
+const sesiones = sesionesData as Sesion[];
+const salas: SalaSlug[] = ['pacifico', 'atlantico-b', 'atlantico-c'];
+
+const TL_START_MIN = 8 * 60;
+const TL_END_MIN = 17 * 60 + 30;
+const PX_PER_MIN = 2;
+const TL_HEIGHT = (TL_END_MIN - TL_START_MIN) * PX_PER_MIN;
+
+function timeToMin(iso: string): number {
+  const [, time] = iso.split('T');
+  const [h, m] = time!.split(':').map(Number);
+  return h! * 60 + m!;
+}
+
+function topPx(iso: string): number {
+  return Math.max(0, (timeToMin(iso) - TL_START_MIN) * PX_PER_MIN);
+}
+
+function heightPx(start: string, end: string): number {
+  return Math.max(20, (timeToMin(end) - timeToMin(start)) * PX_PER_MIN);
+}
+
+const sesionesPorSala: Record<SalaSlug, Sesion[]> = {
+  pacifico: sesiones.filter((s) => s.sala === 'pacifico'),
+  'atlantico-b': sesiones.filter((s) => s.sala === 'atlantico-b'),
+  'atlantico-c': sesiones.filter((s) => s.sala === 'atlantico-c'),
+};
+
+const hourMarks = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+---
+
+<Layout title="Ahora · AIFI26" description="Qué pasa ahora en cada sala de AIFI26.">
+  <Ticker />
+
+  <div class="status-line" role="status" aria-live="polite">
+    <span class="pulse-dot" aria-hidden="true"></span>
+    <span class="status-text" id="status-text">Calculando estado…</span>
+  </div>
+
+  <ModeToggle active="ahora" />
+
+  <header class="hero">
+    <div class="container">
+      <p class="hero-eyebrow" id="hero-eyebrow">en este momento</p>
+      <h1 class="hero-time" id="hero-time">--:--</h1>
+    </div>
+  </header>
+
+  <section id="post-event" class="post-event" hidden>
+    <div class="container">
+      <p class="pe-eyebrow">terminó</p>
+      <h2 class="pe-title">AIFI26 terminó</h2>
+      <p class="pe-sub">Gracias por venir. El cronograma queda como archivo permanente.</p>
+      <a class="pe-cta" href="/dia">Ver lo que pasó →</a>
+    </div>
+  </section>
+
+  <div class="tl-wrap" id="tl-wrap">
+    <div class="tl-cols-head" role="presentation">
+      {
+        salas.map((sala) => (
+          <div class={`sh sala-${sala}`}>
+            <span class="sh-dot" aria-hidden="true" />
+            <span class="sh-name">{SALA_NOMBRE[sala]}</span>
+          </div>
+        ))
+      }
+    </div>
+
+    <div class="tl-grid" style={`height: ${TL_HEIGHT}px;`}>
+      <div class="tl-time-col" aria-hidden="true">
+        {
+          hourMarks.map((h) => (
+            <span class="tl-tick" style={`top: ${(h * 60 - TL_START_MIN) * PX_PER_MIN}px;`}>
+              {String(h).padStart(2, '0')}:00
+            </span>
+          ))
+        }
+        <span class="tl-tick tl-tick-end" style={`top: ${TL_HEIGHT}px;`}>17:30</span>
+      </div>
+
+      {
+        salas.map((sala) => (
+          <div class={`tl-col tl-col-${sala}`} aria-label={`Sesiones en ${SALA_NOMBRE[sala]}`}>
+            {sesionesPorSala[sala].map((s) => (
+              <a
+                href={`/sesion/${s.id}`}
+                class:list={['tl-slot', `sala-${sala}`, `tipo-${s.tipo}`]}
+                data-sesion-id={s.id}
+                data-start-min={timeToMin(s.inicio)}
+                data-end-min={timeToMin(s.fin)}
+                style={`top: ${topPx(s.inicio)}px; height: ${heightPx(s.inicio, s.fin)}px;`}
+                aria-label={`${s.titulo}, ${SALA_NOMBRE[sala]}, ${s.inicio.slice(11, 16)} a ${s.fin.slice(11, 16)}`}
+              >
+                <span class="tl-slot-time">{s.inicio.slice(11, 16)}</span>
+                <span class="tl-slot-title">{s.titulo}</span>
+              </a>
+            ))}
+          </div>
+        ))
+      }
+
+      <div class="now-line" id="now-line" hidden>
+        <span class="now-label" id="now-label">--:--</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="link-day-row">
+    <a class="link-day" href="/dia">Ver todo el día →</a>
+  </p>
+
+  <script
+    is:inline
+    define:vars={{
+      sesionesData: sesiones,
+      salasData: salas,
+      TL_START_MIN,
+      TL_HEIGHT,
+      PX_PER_MIN,
+    }}
+  >
+    const EVENT_START_MS = new Date('2026-05-21T08:00:00-03:00').getTime();
+    const EVENT_END_MS = new Date('2026-05-21T17:30:00-03:00').getTime();
+    const LIVE_GRACE_MS = 60_000;
+    const ENDING_SOON_MS = 5 * 60_000;
+
+    // Time override for preview/QA: /ahora?now=2026-05-21T11:00:00-03:00
+    function getNow() {
+      const params = new URLSearchParams(window.location.search);
+      const override = params.get('now');
+      if (override) {
+        const d = new Date(override);
+        if (!isNaN(d.getTime())) return d;
+      }
+      return new Date();
+    }
+
+    function isLive(s, now) {
+      const t = now.getTime();
+      const start = new Date(s.inicio).getTime();
+      const end = new Date(s.fin).getTime() + LIVE_GRACE_MS;
+      return t >= start && t < end;
+    }
+
+    function isEndingSoon(s, now) {
+      if (!isLive(s, now)) return false;
+      const left = new Date(s.fin).getTime() - now.getTime();
+      return left >= 0 && left <= ENDING_SOON_MS;
+    }
+
+    function isPast(s, now) {
+      return now.getTime() >= new Date(s.fin).getTime() + LIVE_GRACE_MS;
+    }
+
+    function getCurrent(sala, now) {
+      return sesionesData.find((s) => s.sala === sala && isLive(s, now)) ?? null;
+    }
+
+    function getMinUntilNextChange(now) {
+      const t = now.getTime();
+      const ups = [];
+      for (const s of sesionesData) {
+        const start = new Date(s.inicio).getTime();
+        const end = new Date(s.fin).getTime();
+        if (isLive(s, now) && end > t) ups.push(end - t);
+        if (start > t) ups.push(start - t);
+      }
+      if (!ups.length) return null;
+      return Math.max(0, Math.round(Math.min(...ups) / 60_000));
+    }
+
+    function getEventDayString(now) {
+      return new Intl.DateTimeFormat('es-AR', {
+        timeZone: 'America/Argentina/Buenos_Aires',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(now);
+    }
+
+    function isEventDay(now) {
+      const d = getEventDayString(now);
+      return d === '21/5/2026' || d === '21/05/2026';
+    }
+
+    function isDuringEvent(now) {
+      const t = now.getTime();
+      return t >= EVENT_START_MS && t <= EVENT_END_MS;
+    }
+
+    function updateHero(now) {
+      const time = document.getElementById('hero-time');
+      const eyebrow = document.getElementById('hero-eyebrow');
+      if (!time || !eyebrow) return;
+
+      const t = now.getTime();
+      const isPre = t < EVENT_START_MS;
+      const isPost = t > EVENT_END_MS;
+      const onDay = isEventDay(now);
+
+      if (isPre) {
+        const days = Math.ceil((EVENT_START_MS - t) / 86_400_000);
+        const label =
+          days <= 0
+            ? 'el evento arranca hoy · 08:00'
+            : days === 1
+              ? 'arranca mañana'
+              : `faltan ${days} días`;
+        eyebrow.textContent = label;
+        time.textContent = '21 may';
+        return;
+      }
+
+      if (isPost) {
+        eyebrow.textContent = 'el evento terminó';
+        time.textContent = '21 may';
+        return;
+      }
+
+      // During the event
+      const hh = new Intl.DateTimeFormat('es-AR', {
+        timeZone: 'America/Argentina/Buenos_Aires',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).format(now);
+      eyebrow.textContent = onDay ? 'en este momento' : 'cronograma';
+      time.textContent = hh;
+    }
+
+    function updateStatus(now) {
+      const el = document.getElementById('status-text');
+      const dot = document.querySelector('.pulse-dot');
+      if (!el) return;
+
+      const t = now.getTime();
+      const isPre = t < EVENT_START_MS;
+      const isPost = t > EVENT_END_MS;
+
+      if (isPre) {
+        if (dot) dot.classList.add('static');
+        el.textContent = 'Hotel Hilton Buenos Aires · acreditaciones desde 08:00';
+        return;
+      }
+
+      if (isPost) {
+        if (dot) dot.classList.add('static');
+        el.textContent = 'AIFI26 terminó · modo archivo';
+        return;
+      }
+
+      if (dot) dot.classList.remove('static');
+
+      let active = 0;
+      for (const sala of salasData) {
+        if (getCurrent(sala, now)) active++;
+      }
+      const next = getMinUntilNextChange(now);
+      if (next == null) el.textContent = 'sin más cambios hoy';
+      else if (active === 0) el.innerHTML = `Break · próximo cambio en <strong>${next} min</strong>`;
+      else
+        el.innerHTML = `${active} ${active === 1 ? 'sala activa' : 'salas activas'} · próximo cambio en <strong>${next} min</strong>`;
+    }
+
+    function updateSlots(now) {
+      const t = now.getTime();
+      const isPre = t < EVENT_START_MS;
+      document.querySelectorAll('.tl-slot').forEach((el) => {
+        const id = el.dataset.sesionId;
+        const s = sesionesData.find((x) => x.id === id);
+        if (!s) return;
+        if (isPre) {
+          // Pre-event: no live/past/ending state — show plain calendar
+          el.classList.remove('is-live', 'is-past', 'is-ending');
+          return;
+        }
+        const live = isLive(s, now);
+        const past = isPast(s, now);
+        const ending = isEndingSoon(s, now);
+        el.classList.toggle('is-live', live);
+        el.classList.toggle('is-past', past);
+        el.classList.toggle('is-ending', ending);
+      });
+    }
+
+    function updateNowLine(now) {
+      const line = document.getElementById('now-line');
+      const label = document.getElementById('now-label');
+      if (!line || !label) return;
+
+      if (!isEventDay(now) || !isDuringEvent(now)) {
+        line.hidden = true;
+        return;
+      }
+
+      const minSinceStart = (now.getTime() - EVENT_START_MS) / 60_000;
+      line.style.top = `${minSinceStart * PX_PER_MIN}px`;
+      line.hidden = false;
+
+      const hh = new Intl.DateTimeFormat('es-AR', {
+        timeZone: 'America/Argentina/Buenos_Aires',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).format(now);
+      label.textContent = hh;
+    }
+
+    function scrollToNow() {
+      const now = getNow();
+      if (!isEventDay(now) || !isDuringEvent(now)) return;
+      const wrap = document.querySelector('.tl-grid');
+      if (!wrap) return;
+      const minSinceStart = (now.getTime() - EVENT_START_MS) / 60_000;
+      const target = minSinceStart * PX_PER_MIN - window.innerHeight / 3;
+      window.scrollTo({ top: target + wrap.offsetTop, behavior: 'smooth' });
+    }
+
+    function updateViewMode(now) {
+      const tl = document.getElementById('tl-wrap');
+      const post = document.getElementById('post-event');
+      if (!tl || !post) return;
+
+      const t = now.getTime();
+      const isPost = t > EVENT_END_MS;
+
+      // Post-event: hide timeline, show archive state
+      if (isPost) {
+        tl.hidden = true;
+        post.hidden = false;
+        return;
+      }
+      // Pre-event OR during event: timeline always visible
+      tl.hidden = false;
+      post.hidden = true;
+    }
+
+    function tick() {
+      const now = getNow();
+      updateViewMode(now);
+      updateHero(now);
+      updateStatus(now);
+      updateSlots(now);
+      updateNowLine(now);
+    }
+
+    function init() {
+      tick();
+      scrollToNow();
+      setInterval(() => {
+        if (document.visibilityState === 'visible') tick();
+      }, 60_000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') tick();
+      });
+    }
+
+    document.addEventListener('astro:page-load', init);
+    init();
+  </script>
+</Layout>
+
+<style>
+  .container {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding: 0 var(--s-4);
+  }
+
+  .status-line {
+    padding: var(--s-3) var(--s-4);
+    background: var(--bg);
+    border-bottom: 1px solid var(--hair);
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    font-size: var(--t-sm);
+  }
+
+  .pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--magenta);
+    box-shadow: 0 0 8px var(--magenta);
+    animation: pulse 1.8s infinite;
+    flex-shrink: 0;
+  }
+
+  .pulse-dot.static {
+    background: var(--fg-dim);
+    box-shadow: none;
+    animation: none;
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.3);
+      opacity: 0.7;
+    }
+  }
+
+  .status-text {
+    color: var(--fg-soft);
+  }
+
+  .status-text :global(strong) {
+    color: var(--magenta);
+    font-weight: 700;
+  }
+
+  .hero {
+    padding: var(--s-4) 0 var(--s-3);
+  }
+
+  .hero-eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 var(--s-1);
+  }
+
+  .hero-time {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 3rem;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    margin: 0;
+    color: var(--fg);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* POST EVENT EMPTY STATE */
+  .post-event {
+    padding: var(--s-5) 0 var(--s-7);
+  }
+
+  .post-event .pe-eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 var(--s-2);
+  }
+
+  .post-event .pe-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--t-3xl);
+    letter-spacing: -0.035em;
+    line-height: 0.95;
+    margin: 0 0 var(--s-3);
+    color: var(--fg);
+  }
+
+  .post-event .pe-sub {
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    color: var(--fg-soft);
+    margin: 0 0 var(--s-6);
+    line-height: 1.5;
+  }
+
+  .post-event .pe-cta {
+    display: inline-block;
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    font-weight: 600;
+    color: var(--cyan);
+    text-decoration: none;
+    padding: var(--s-3) var(--s-4);
+    border: 1px solid var(--cyan);
+    border-radius: var(--r-pill);
+    min-height: var(--touch-min);
+  }
+
+  .post-event .pe-cta:hover {
+    background: var(--cyan);
+    color: var(--bg);
+  }
+
+  /* TIMELINE WRAP */
+  .tl-wrap {
+    margin-top: var(--s-3);
+    padding-bottom: var(--s-6);
+  }
+
+  /* Sala headers — sticky below modes bar */
+  .tl-cols-head {
+    position: sticky;
+    top: var(--sticky-top-after-modes);
+    z-index: 5;
+    display: grid;
+    grid-template-columns: 40px 1fr 1fr 1fr;
+    background: var(--bg-elev);
+    border-top: 1px solid var(--hair);
+    border-bottom: 1px solid var(--hair);
+    margin: 0;
+  }
+
+  .tl-cols-head::before {
+    content: '';
+    display: block;
+  }
+
+  .sh {
+    padding: var(--s-2) var(--s-2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    border-left: 1px solid var(--hair);
+  }
+
+  .sh-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    box-shadow: 0 0 6px currentColor;
+  }
+
+  .sh-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: -0.01em;
+    color: var(--fg);
+    line-height: 1;
+    text-align: center;
+  }
+
+  .sh.sala-pacifico {
+    color: var(--sala-pacifico);
+  }
+  .sh.sala-atlantico-b {
+    color: var(--sala-atlantico-b);
+  }
+  .sh.sala-atlantico-c {
+    color: var(--sala-atlantico-c);
+  }
+
+  .sh.sala-pacifico .sh-dot {
+    background: var(--sala-pacifico);
+  }
+  .sh.sala-atlantico-b .sh-dot {
+    background: var(--sala-atlantico-b);
+  }
+  .sh.sala-atlantico-c .sh-dot {
+    background: var(--sala-atlantico-c);
+  }
+
+  /* TIMELINE GRID */
+  .tl-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: 40px 1fr 1fr 1fr;
+    background: var(--bg);
+    border-bottom: 1px solid var(--hair);
+  }
+
+  /* Time column */
+  .tl-time-col {
+    position: relative;
+    border-right: 1px solid var(--hair);
+  }
+
+  .tl-tick {
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: center;
+    transform: translateY(-50%);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+    background: var(--bg);
+    padding: 2px 0;
+  }
+
+  .tl-tick-end {
+    color: var(--fg-dim);
+  }
+
+  /* Sala columns */
+  .tl-col {
+    position: relative;
+    border-left: 1px solid var(--hair);
+  }
+
+  /* Hour grid lines */
+  .tl-grid::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 40px;
+    right: 0;
+    bottom: 0;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent calc(60px * 2 - 1px),
+      var(--hair) calc(60px * 2 - 1px),
+      var(--hair) calc(60px * 2)
+    );
+    pointer-events: none;
+  }
+
+  /* Slots */
+  .tl-slot {
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    border-radius: 6px;
+    padding: 4px 6px;
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--fg);
+    border: 1px solid;
+    transition:
+      opacity var(--m-fast) var(--m-ease),
+      transform var(--m-fast) var(--m-ease),
+      box-shadow var(--m-fast) var(--m-ease);
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-height: 24px;
+  }
+
+  .tl-slot:active {
+    transform: scale(0.98);
+  }
+
+  .tl-slot.sala-pacifico {
+    background: rgba(91, 140, 255, 0.18);
+    border-color: rgba(91, 140, 255, 0.45);
+  }
+  .tl-slot.sala-atlantico-b {
+    background: rgba(15, 179, 252, 0.14);
+    border-color: rgba(15, 179, 252, 0.4);
+  }
+  .tl-slot.sala-atlantico-c {
+    background: rgba(251, 74, 168, 0.14);
+    border-color: rgba(251, 74, 168, 0.4);
+  }
+
+  .tl-slot.tipo-break,
+  .tl-slot.tipo-acreditacion {
+    background: transparent;
+    border-style: dashed;
+    border-color: var(--hair-bright);
+    color: var(--fg-muted);
+  }
+
+  .tl-slot.is-past {
+    opacity: 0.32;
+  }
+
+  .tl-slot.is-live {
+    box-shadow: 0 0 0 1.5px var(--cyan), 0 0 16px var(--cyan-glow);
+    z-index: 2;
+  }
+
+  .tl-slot.is-live.is-ending {
+    box-shadow: 0 0 0 1.5px var(--magenta), 0 0 16px var(--magenta-glow);
+  }
+
+  .tl-slot-time {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .tl-slot.is-live .tl-slot-time {
+    color: var(--cyan);
+    font-weight: 700;
+  }
+
+  .tl-slot.is-live.is-ending .tl-slot-time {
+    color: var(--magenta);
+  }
+
+  .tl-slot-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    color: var(--fg);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    text-overflow: ellipsis;
+  }
+
+  .tl-slot.is-past .tl-slot-title {
+    color: var(--fg-muted);
+  }
+
+  /* Now line — horizontal, crosses all 3 columns */
+  .now-line {
+    position: absolute;
+    left: 40px;
+    right: 0;
+    height: 2px;
+    background: var(--cyan);
+    box-shadow: 0 0 12px var(--cyan);
+    z-index: 4;
+    pointer-events: none;
+  }
+
+  .now-line::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: -4px;
+    width: 10px;
+    height: 10px;
+    background: var(--cyan);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--cyan);
+    animation: nowpulse 2s infinite;
+  }
+
+  @keyframes nowpulse {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.4);
+      opacity: 0.7;
+    }
+  }
+
+  .now-label {
+    position: absolute;
+    right: calc(100% + 6px);
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--bg);
+    background: var(--cyan);
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+
+  .link-day-row {
+    text-align: center;
+    margin: var(--s-5) 0 0;
+  }
+
+  .link-day {
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    font-weight: 600;
+    color: var(--cyan);
+    text-decoration: none;
+    padding: var(--s-3) var(--s-4);
+    border: 1px solid var(--cyan);
+    border-radius: var(--r-pill);
+    display: inline-block;
+    min-height: var(--touch-min);
+  }
+
+  .link-day:hover {
+    background: var(--cyan);
+    color: var(--bg);
+  }
+
+  /* Bigger time col on tablet+ */
+  @media (min-width: 600px) {
+    .tl-cols-head,
+    .tl-grid {
+      grid-template-columns: 56px 1fr 1fr 1fr;
+    }
+
+    .now-line {
+      left: 56px;
+    }
+
+    .tl-slot-title {
+      font-size: 12px;
+    }
+
+    .sh-name {
+      font-size: 13px;
+    }
+  }
+</style>

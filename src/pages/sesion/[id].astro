@@ -1,0 +1,597 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Ticker from '../../components/Ticker.astro';
+import RoomBadge from '../../components/RoomBadge.astro';
+import CategoryBadge from '../../components/CategoryBadge.astro';
+import sesionesData from '../../data/sesiones.json';
+import speakersData from '../../data/speakers.json';
+import { SALA_NOMBRE, type Sesion, type Speaker } from '../../types';
+
+export function getStaticPaths() {
+  return (sesionesData as Sesion[]).map((s) => ({ params: { id: s.id } }));
+}
+
+const { id } = Astro.params;
+const sesiones = sesionesData as Sesion[];
+const speakers = speakersData as Speaker[];
+const speakersById = new Map(speakers.map((s) => [s.id, s]));
+const sesion = sesiones.find((s) => s.id === id);
+
+if (!sesion) {
+  return Astro.redirect('/dia');
+}
+
+const sessionSpeakers = sesion.speakers.map((sid) => speakersById.get(sid)).filter((s): s is Speaker => Boolean(s));
+const moderator = sesion.moderador ? speakersById.get(sesion.moderador) : null;
+
+const timeRange = `${sesion.inicio.slice(11, 16)} → ${sesion.fin.slice(11, 16)}`;
+
+const sameSala = sesiones
+  .filter((s) => s.sala === sesion.sala)
+  .sort((a, b) => new Date(a.inicio).getTime() - new Date(b.inicio).getTime());
+const idxInSala = sameSala.findIndex((s) => s.id === sesion.id);
+const nextInSala = idxInSala >= 0 && idxInSala < sameSala.length - 1 ? sameSala[idxInSala + 1] : null;
+const prevInSala = idxInSala > 0 ? sameSala[idxInSala - 1] : null;
+
+const tipoLabel: Record<Sesion['tipo'], string> = {
+  acreditacion: 'Acreditación',
+  talk: 'Talk',
+  panel: 'Panel',
+  keynote: 'Keynote',
+  workshop: 'Workshop',
+  break: 'Break',
+  cierre: 'Cierre',
+};
+---
+
+<Layout
+  title={`${sesion.titulo} · AIFI26`}
+  description={sesion.descripcion ?? `${sesion.titulo} · ${SALA_NOMBRE[sesion.sala]} · ${timeRange}`}
+>
+  <Ticker />
+
+  <article class="page">
+    <div class="container">
+      <nav class="crumbs" aria-label="Volver">
+        <a href="/dia">← Día completo</a>
+      </nav>
+
+      <header class="hero">
+        <div class="hero-meta">
+          <RoomBadge sala={sesion.sala} />
+          <span class="time">{timeRange}</span>
+          <span class="tipo">{tipoLabel[sesion.tipo]}</span>
+        </div>
+
+        <h1 class="title">{sesion.titulo}</h1>
+
+        {sesion.descripcion && <p class="desc">{sesion.descripcion}</p>}
+
+        <div class="cats">
+          <CategoryBadge slug={sesion.category} />
+          {sesion.categoryAlt?.map((slug) => <CategoryBadge slug={slug} />)}
+        </div>
+      </header>
+
+      {
+        sessionSpeakers.length > 0 && (
+          <section class="speakers-section" aria-label="Speakers">
+            <h2 class="section-title">Speakers</h2>
+            <ul class="speakers">
+              {sessionSpeakers.map((sp) => (
+                <li class="speaker">
+                  <div class="speaker-text">
+                    <div class="who">{sp.nombre}</div>
+                    <div class="role">{sp.rol}</div>
+                    {sp.bio && <p class="bio">{sp.bio}</p>}
+                  </div>
+                  {sp.linkedin && (
+                    <a
+                      class="li-cta"
+                      href={sp.linkedin}
+                      target="_blank"
+                      rel="noopener me"
+                      aria-label={`Conectar con ${sp.nombre} en LinkedIn`}
+                    >
+                      LinkedIn →
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      {
+        moderator && (
+          <section class="moderator-section" aria-label="Moderador">
+            <h2 class="section-title">Modera</h2>
+            <div class="speaker">
+              <div class="speaker-text">
+                <div class="who">{moderator.nombre}</div>
+                <div class="role">{moderator.rol}</div>
+                {moderator.bio && <p class="bio">{moderator.bio}</p>}
+              </div>
+              {moderator.linkedin && (
+                <a
+                  class="li-cta"
+                  href={moderator.linkedin}
+                  target="_blank"
+                  rel="noopener me"
+                  aria-label={`Conectar con ${moderator.nombre} en LinkedIn`}
+                >
+                  LinkedIn →
+                </a>
+              )}
+            </div>
+          </section>
+        )
+      }
+
+      <section class="actions" aria-label="Acciones">
+        <button class="btn btn-primary" id="fav-btn" data-id={sesion.id} type="button">
+          <span class="fav-empty">★ Guardar en Mi día</span>
+          <span class="fav-full" hidden>✓ Guardado</span>
+        </button>
+        <button class="btn" id="ics-btn" type="button">+ Calendario</button>
+        <button class="btn" id="share-btn" type="button">Compartir</button>
+      </section>
+
+      <p class="actions-note" id="actions-status" aria-live="polite"></p>
+
+      {
+        (nextInSala || prevInSala) && (
+          <nav class="adjacent" aria-label="Sesiones adyacentes en la misma sala">
+            {prevInSala && (
+              <a class="adj adj-prev" href={`/sesion/${prevInSala.id}`}>
+                <span class="adj-label">Anterior · {SALA_NOMBRE[sesion.sala]}</span>
+                <span class="adj-title">{prevInSala.titulo}</span>
+                <span class="adj-time">{prevInSala.inicio.slice(11, 16)} → {prevInSala.fin.slice(11, 16)}</span>
+              </a>
+            )}
+            {nextInSala && (
+              <a class="adj adj-next" href={`/sesion/${nextInSala.id}`}>
+                <span class="adj-label">A continuación · {SALA_NOMBRE[sesion.sala]}</span>
+                <span class="adj-title">{nextInSala.titulo}</span>
+                <span class="adj-time">{nextInSala.inicio.slice(11, 16)} → {nextInSala.fin.slice(11, 16)}</span>
+              </a>
+            )}
+          </nav>
+        )
+      }
+    </div>
+  </article>
+
+  <script
+    is:inline
+    define:vars={{
+      sesionData: sesion,
+      speakersData: speakers,
+      SALA_NOMBRE_JS: SALA_NOMBRE,
+    }}
+  >
+    const STORAGE_KEY = 'aifi26.favorites';
+
+    function getStored() {
+      try {
+        return (localStorage.getItem(STORAGE_KEY) ?? '')
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+      } catch {
+        return [];
+      }
+    }
+
+    function setStored(ids) {
+      try {
+        localStorage.setItem(STORAGE_KEY, ids.join(','));
+      } catch {
+        /* ignore */
+      }
+    }
+
+    function setupFav() {
+      const btn = document.getElementById('fav-btn');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      const emptyLabel = btn.querySelector('.fav-empty');
+      const fullLabel = btn.querySelector('.fav-full');
+
+      function render() {
+        const has = getStored().includes(id);
+        emptyLabel.hidden = has;
+        fullLabel.hidden = !has;
+        btn.classList.toggle('is-fav', has);
+      }
+
+      btn.addEventListener('click', () => {
+        const stored = getStored();
+        const next = stored.includes(id) ? stored.filter((x) => x !== id) : [...stored, id];
+        setStored(next);
+        render();
+      });
+
+      render();
+    }
+
+    function escapeIcs(s) {
+      return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+    }
+
+    function toIcsLocal(iso) {
+      const [date, time] = iso.replace('-03:00', '').split('T');
+      return `${date.replace(/-/g, '')}T${time.replace(/:/g, '')}`;
+    }
+
+    function downloadIcs() {
+      const speakersById = new Map(speakersData.map((s) => [s.id, s]));
+      const s = sesionData;
+      const desc = [
+        s.descripcion ?? '',
+        '',
+        'Speakers:',
+        ...s.speakers
+          .map((id) => speakersById.get(id))
+          .filter(Boolean)
+          .map((sp) => `· ${sp.nombre} — ${sp.rol}`),
+        s.moderador && speakersById.get(s.moderador)
+          ? `Moderador: ${speakersById.get(s.moderador).nombre} — ${speakersById.get(s.moderador).rol}`
+          : '',
+      ]
+        .filter(Boolean)
+        .join('\n');
+
+      const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+      const body = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//AIFI26//cronograma no oficial//ES',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        'BEGIN:VEVENT',
+        `UID:${s.id}@aifi26`,
+        `DTSTAMP:${stamp}`,
+        `DTSTART;TZID=America/Argentina/Buenos_Aires:${toIcsLocal(s.inicio)}`,
+        `DTEND;TZID=America/Argentina/Buenos_Aires:${toIcsLocal(s.fin)}`,
+        `SUMMARY:${escapeIcs(s.titulo)}`,
+        `LOCATION:${escapeIcs('Salón ' + SALA_NOMBRE_JS[s.sala] + ' · Hotel Hilton Buenos Aires')}`,
+        `DESCRIPTION:${escapeIcs(desc)}`,
+        'END:VEVENT',
+        'END:VCALENDAR',
+      ].join('\r\n');
+
+      const blob = new Blob([body], { type: 'text/calendar' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `aifi26-${s.id}.ics`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function setupIcs() {
+      const btn = document.getElementById('ics-btn');
+      if (!btn) return;
+      btn.addEventListener('click', downloadIcs);
+    }
+
+    function setupShare() {
+      const btn = document.getElementById('share-btn');
+      const status = document.getElementById('actions-status');
+      if (!btn || !status) return;
+
+      btn.addEventListener('click', async () => {
+        const url = `${window.location.origin}/sesion/${sesionData.id}`;
+        const text = `${sesionData.titulo} · AIFI26`;
+
+        if (navigator.share) {
+          try {
+            await navigator.share({ title: text, text, url });
+            status.textContent = 'compartido';
+            return;
+          } catch (err) {
+            if (err && err.name === 'AbortError') {
+              status.textContent = '';
+              return;
+            }
+          }
+        }
+
+        try {
+          await navigator.clipboard.writeText(url);
+          status.textContent = 'link copiado';
+        } catch {
+          status.textContent = url;
+        }
+      });
+    }
+
+    function init() {
+      setupFav();
+      setupIcs();
+      setupShare();
+    }
+
+    document.addEventListener('astro:page-load', init);
+    init();
+  </script>
+</Layout>
+
+<style>
+  .container {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding: 0 var(--s-4);
+  }
+
+  .page {
+    padding: var(--s-4) 0 var(--s-7);
+  }
+
+  .crumbs {
+    margin-bottom: var(--s-4);
+  }
+
+  .crumbs a {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+
+  .crumbs a:hover {
+    color: var(--cyan);
+  }
+
+  .hero {
+    margin-bottom: var(--s-6);
+    padding-bottom: var(--s-5);
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-3);
+    align-items: center;
+    margin-bottom: var(--s-4);
+  }
+
+  .time {
+    font-family: var(--font-mono);
+    font-size: var(--t-sm);
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tipo {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-dim);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: 1px solid var(--hair);
+    padding: 2px var(--s-2);
+    border-radius: var(--r-sm);
+  }
+
+  .title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--t-2xl);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin: 0 0 var(--s-3);
+    color: var(--fg);
+  }
+
+  .desc {
+    font-family: var(--font-italic);
+    font-style: italic;
+    font-size: var(--t-md);
+    color: var(--fg-soft);
+    line-height: 1.5;
+    margin: 0 0 var(--s-4);
+  }
+
+  .cats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+
+  .section-title {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-dim);
+    margin: 0 0 var(--s-3);
+  }
+
+  .speakers-section,
+  .moderator-section {
+    margin-bottom: var(--s-6);
+  }
+
+  .speakers {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+
+  .speaker {
+    display: flex;
+    gap: var(--s-3);
+    align-items: flex-start;
+    padding: var(--s-3);
+    background: var(--bg-card);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-md);
+  }
+
+  .speaker-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .who {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--t-base);
+    letter-spacing: -0.01em;
+    color: var(--fg);
+    line-height: 1.2;
+  }
+
+  .role {
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    color: var(--fg-muted);
+    margin-top: 2px;
+  }
+
+  .bio {
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    color: var(--fg-soft);
+    line-height: 1.5;
+    margin: var(--s-2) 0 0;
+  }
+
+  .li-cta {
+    flex-shrink: 0;
+    font-family: var(--font-body);
+    font-size: var(--t-xs);
+    font-weight: 600;
+    color: var(--cyan);
+    background: transparent;
+    border: 1px solid var(--cyan);
+    border-radius: var(--r-pill);
+    padding: var(--s-2) var(--s-3);
+    text-decoration: none;
+    min-height: var(--touch-min);
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .li-cta:hover {
+    background: var(--cyan);
+    color: var(--bg);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+    margin-top: var(--s-5);
+  }
+
+  .actions-note {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    margin: var(--s-3) 0 var(--s-5);
+    min-height: 1.4em;
+  }
+
+  .btn {
+    background: var(--bg-card);
+    border: 1px solid var(--hair-bright);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: var(--t-sm);
+    padding: var(--s-3) var(--s-4);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    min-height: var(--touch-min);
+    transition: all var(--m-fast) var(--m-ease);
+  }
+
+  .btn:hover {
+    border-color: var(--cyan);
+  }
+
+  .btn-primary {
+    background: var(--cyan);
+    color: var(--bg);
+    border-color: var(--cyan);
+  }
+
+  .btn-primary:hover {
+    background: var(--mint);
+    border-color: var(--mint);
+  }
+
+  .btn-primary.is-fav {
+    background: #fbbf24;
+    color: var(--bg);
+    border-color: #fbbf24;
+  }
+
+  .adjacent {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--s-3);
+    margin-top: var(--s-6);
+    padding-top: var(--s-5);
+    border-top: 1px solid var(--hair);
+  }
+
+  @media (min-width: 600px) {
+    .adjacent {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .adj {
+    display: block;
+    padding: var(--s-3);
+    background: var(--bg-card);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-md);
+    text-decoration: none;
+    color: var(--fg);
+    transition: border-color var(--m-fast) var(--m-ease);
+  }
+
+  .adj:hover {
+    border-color: var(--cyan);
+  }
+
+  .adj-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--fg-dim);
+    margin-bottom: var(--s-1);
+  }
+
+  .adj-title {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--t-sm);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: var(--s-1);
+  }
+
+  .adj-time {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

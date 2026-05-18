@@ -1,0 +1,87 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="AIFI26 · cronograma">
+  <div class="splash">
+    <div class="container">
+      <h1 class="brand">aifi<span class="accent">/26</span></h1>
+      <p class="meta">21 may 2026 · Hotel Hilton Buenos Aires</p>
+      <p class="hint" id="hint">Redirigiendo…</p>
+
+      <noscript>
+        <p class="hint">
+          <a href="/dia">Ver cronograma completo →</a>
+        </p>
+      </noscript>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // Decide which mode to show based on the BA clock, not the device clock.
+  const EVENT_START_MS = new Date('2026-05-21T08:00:00-03:00').getTime();
+  const EVENT_END_MS = new Date('2026-05-21T17:30:00-03:00').getTime();
+
+  function decideRoute(): string {
+    const t = Date.now();
+    if (t >= EVENT_START_MS && t <= EVENT_END_MS) return '/ahora';
+    return '/dia';
+  }
+
+  function redirect() {
+    const target = decideRoute();
+    window.location.replace(target);
+  }
+
+  document.addEventListener('astro:page-load', redirect);
+  // Astro may execute scripts before transition framework binds — also run sync.
+  redirect();
+</script>
+
+<style>
+  .splash {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--s-7) var(--s-4);
+  }
+
+  .container {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .brand {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--t-3xl);
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+    margin: 0;
+    color: var(--fg);
+  }
+
+  .brand .accent {
+    color: var(--cyan);
+  }
+
+  .meta {
+    font-family: var(--font-mono);
+    font-size: var(--t-sm);
+    color: var(--fg-muted);
+    margin: var(--s-4) 0 var(--s-7);
+    letter-spacing: 0.02em;
+  }
+
+  .hint {
+    font-size: var(--t-sm);
+    color: var(--fg-dim);
+  }
+
+  .hint a {
+    color: var(--cyan);
+  }
+</style>

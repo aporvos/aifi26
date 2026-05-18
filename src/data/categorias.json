@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "estrategia-y-liderazgo",
+    "nombre": "Estrategia y liderazgo",
+    "descripcion": "Visión ejecutiva, adopción organizacional, posicionamiento competitivo, transformación del negocio y lectura macro del impacto de AI en finanzas."
+  },
+  {
+    "slug": "agentes-y-automatizacion",
+    "nombre": "Agentes y automatización",
+    "descripcion": "Agentes, autonomía operativa, workflows inteligentes, decisiones asistidas por AI y automatización de procesos complejos."
+  },
+  {
+    "slug": "producto-datos-y-experiencia",
+    "nombre": "Producto, datos y experiencia",
+    "descripcion": "Apps, CX/UX, hiperpersonalización, producto AI, aprendizaje del producto, datos de cliente e impacto sobre la experiencia digital."
+  },
+  {
+    "slug": "plataforma-y-escala",
+    "nombre": "Plataforma y escala",
+    "descripcion": "La base que hace viable el negocio financiero con AI: compliance, seguridad, integraciones, operaciones, legados, BaaS e infraestructura para escalar."
+  },
+  {
+    "slug": "ecosistema-inversion-y-talento",
+    "nombre": "Ecosistema, inversión y talento",
+    "descripcion": "Venture capital, startups, premios, pitchs, reskilling y construcción del ecosistema humano y emprendedor alrededor de AI."
+  },
+  {
+    "slug": "networking-y-contenido",
+    "nombre": "Networking y contenido",
+    "descripcion": "Acreditación, networking y sesiones de producción de contenido o comunicación, que funcionan como filtros de formato o activación."
+  }
+]

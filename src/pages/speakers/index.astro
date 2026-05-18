@@ -1,0 +1,245 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Ticker from '../../components/Ticker.astro';
+import RoomBadge from '../../components/RoomBadge.astro';
+import sesionesData from '../../data/sesiones.json';
+import speakersData from '../../data/speakers.json';
+import type { Sesion, Speaker } from '../../types';
+
+const sesiones = sesionesData as Sesion[];
+const speakers = speakersData as Speaker[];
+
+function stripAccents(s: string): string {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+const speakerSessions: Record<string, Sesion[]> = {};
+for (const s of sesiones) {
+  for (const id of s.speakers) {
+    (speakerSessions[id] ??= []).push(s);
+  }
+  if (s.moderador) {
+    (speakerSessions[s.moderador] ??= []).push(s);
+  }
+}
+
+const speakersWithSessions = speakers
+  .filter((sp) => (speakerSessions[sp.id]?.length ?? 0) > 0)
+  .sort((a, b) => stripAccents(a.nombre).localeCompare(stripAccents(b.nombre), 'es'));
+
+const totalCount = speakersWithSessions.length;
+---
+
+<Layout
+  title="Speakers · AIFI26"
+  description={`${totalCount} speakers en AIFI26 · 21 mayo 2026 · Hilton BA.`}
+>
+  <Ticker />
+
+  <header class="page-head">
+    <div class="container">
+      <p class="eyebrow">jueves 21 mayo · Hilton BA</p>
+      <h1 class="title">Speakers</h1>
+      <p class="sub">{totalCount} personas</p>
+    </div>
+  </header>
+
+  <section class="list-wrap" aria-label="Lista de speakers">
+    <div class="container">
+      <ul class="speakers-list">
+        {
+          speakersWithSessions.map((sp) => {
+            const sessions = speakerSessions[sp.id] ?? [];
+            return (
+              <li class="speaker-row">
+                <div class="row-head">
+                  <h2 class="who">{sp.nombre}</h2>
+                  {sessions.length > 1 && <span class="count">× {sessions.length}</span>}
+                </div>
+                <p class="role">{sp.rol}</p>
+                {sp.bio && <p class="bio">{sp.bio}</p>}
+                <ul class="speaker-sessions">
+                  {sessions.map((s) => (
+                    <li class="session-ref">
+                      <a href={`/sesion/${s.id}`}>
+                        <RoomBadge sala={s.sala} size="sm" />
+                        <span class="time">{s.inicio.slice(11, 16)}</span>
+                        <span class="title-ref">{s.titulo}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                {sp.linkedin && (
+                  <a class="li-cta" href={sp.linkedin} target="_blank" rel="noopener me">
+                    LinkedIn →
+                  </a>
+                )}
+              </li>
+            );
+          })
+        }
+      </ul>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .container {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding: 0 var(--s-4);
+  }
+
+  .page-head {
+    padding: var(--s-5) 0 var(--s-3);
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 var(--s-2);
+  }
+
+  .title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--t-2xl);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin: 0;
+    color: var(--fg);
+  }
+
+  .sub {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    margin: var(--s-2) 0 0;
+  }
+
+  .list-wrap {
+    padding: var(--s-4) 0;
+  }
+
+  .speakers-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+
+  .speaker-row {
+    background: var(--bg-card);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-lg);
+    padding: var(--s-4);
+  }
+
+  .row-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s-3);
+    margin-bottom: var(--s-1);
+  }
+
+  .who {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--t-md);
+    letter-spacing: -0.02em;
+    margin: 0;
+    color: var(--fg);
+  }
+
+  .count {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--cyan);
+    background: rgba(15, 179, 252, 0.1);
+    padding: 2px var(--s-2);
+    border-radius: var(--r-sm);
+    border: 1px solid var(--cyan);
+    font-weight: 700;
+  }
+
+  .role {
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    color: var(--fg-muted);
+    margin: 0 0 var(--s-3);
+  }
+
+  .bio {
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    color: var(--fg-soft);
+    line-height: 1.5;
+    margin: 0 0 var(--s-3);
+  }
+
+  .speaker-sessions {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--s-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+  }
+
+  .session-ref a {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    padding: var(--s-2) var(--s-3);
+    background: var(--bg-card-2);
+    border-radius: var(--r-sm);
+    text-decoration: none;
+    color: var(--fg);
+    font-size: var(--t-sm);
+    border: 1px solid transparent;
+    transition: border-color var(--m-fast) var(--m-ease);
+  }
+
+  .session-ref a:hover {
+    border-color: var(--hair-bright);
+  }
+
+  .session-ref .time {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+  }
+
+  .session-ref .title-ref {
+    flex: 1;
+    color: var(--fg);
+    font-family: var(--font-body);
+    line-height: 1.3;
+  }
+
+  .li-cta {
+    display: inline-block;
+    font-family: var(--font-body);
+    font-size: var(--t-xs);
+    font-weight: 600;
+    color: var(--cyan);
+    background: transparent;
+    border: 1px solid var(--cyan);
+    border-radius: var(--r-pill);
+    padding: var(--s-2) var(--s-3);
+    text-decoration: none;
+    min-height: 32px;
+  }
+
+  .li-cta:hover {
+    background: var(--cyan);
+    color: var(--bg);
+  }
+</style>

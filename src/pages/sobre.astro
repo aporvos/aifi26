@@ -1,0 +1,93 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Ticker from '../components/Ticker.astro';
+---
+
+<Layout
+  title="Sobre · AIFI26"
+  description="Sobre este cronograma no oficial de AIFI26."
+>
+  <Ticker />
+
+  <article class="page">
+    <header class="head">
+      <h1 class="title">Sobre este cronograma</h1>
+    </header>
+
+    <section class="body">
+      <p>
+        Esta app es un complemento al cronograma oficial de
+        <a href="https://aifi.lat" rel="noopener" target="_blank">aifi.lat</a>.
+        No es producida por la organización del evento.
+      </p>
+
+      <p>
+        La armé porque el formato lineal del cronograma oficial hace difícil ver
+        qué pasa en paralelo en cada sala, detectar conflictos al armar tu agenda,
+        y entender qué viene a continuación mientras estás caminando entre charlas.
+      </p>
+
+      <p>
+        El código es estático: sin login, sin cuentas, sin tracking invasivo.
+        Tus favoritos viven en tu navegador. El link de "Mi día" es compartible
+        sin servidor.
+      </p>
+
+      <p class="footer-meta">
+        Hecho con cariño en Buenos Aires por
+        <a
+          href="https://www.linkedin.com/in/gonzaloarribere/"
+          rel="me noopener"
+          target="_blank">Gonzalo Arribere</a
+        >.
+      </p>
+    </section>
+  </article>
+</Layout>
+
+<style>
+  .page {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding: var(--s-5) var(--s-4);
+  }
+
+  .head {
+    margin-bottom: var(--s-5);
+  }
+
+  .title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--t-2xl);
+    letter-spacing: -0.03em;
+    margin: 0;
+    color: var(--fg);
+  }
+
+  .body {
+    font-size: var(--t-base);
+    line-height: 1.6;
+    color: var(--fg-soft);
+  }
+
+  .body p {
+    margin: 0 0 var(--s-4);
+  }
+
+  .body a {
+    color: var(--cyan);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1.5px;
+  }
+
+  .footer-meta {
+    margin-top: var(--s-6) !important;
+    padding-top: var(--s-4);
+    border-top: 1px solid var(--hair);
+    font-family: var(--font-mono);
+    font-size: var(--t-sm);
+    color: var(--fg-muted);
+  }
+</style>

@@ -1,0 +1,864 @@
+---
+import type { Sesion, Speaker } from '../types';
+import RoomBadge from './RoomBadge.astro';
+import CategoryBadge from './CategoryBadge.astro';
+
+interface Props {
+  sesion: Sesion;
+  speakers: Speaker[];
+  variant?: 'compact' | 'expanded';
+}
+
+const { sesion, speakers, variant = 'compact' } = Astro.props;
+
+const speakersById = new Map(speakers.map((s) => [s.id, s]));
+
+function formatTimeRange(iso: string, iso2: string): string {
+  const fmt = (d: string) => d.split('T')[1]?.substring(0, 5) ?? '';
+  return `${fmt(iso)} → ${fmt(iso2)}`;
+}
+
+const sessionSpeakers = sesion.speakers
+  .map((id) => speakersById.get(id))
+  .filter((s): s is Speaker => Boolean(s));
+const moderator = sesion.moderador ? speakersById.get(sesion.moderador) : undefined;
+
+const tipoLabel: Record<Sesion['tipo'], string> = {
+  acreditacion: 'Acreditación',
+  talk: 'Talk',
+  panel: 'Panel',
+  keynote: 'Keynote',
+  workshop: 'Workshop',
+  break: 'Break',
+  cierre: 'Cierre',
+};
+
+const hasSpeakers = sessionSpeakers.length > 0;
+const isInteractive = !['break', 'acreditacion'].includes(sesion.tipo);
+---
+
+<div
+  class:list={['session-card flip-container', `tipo-${sesion.tipo}`, `variant-${variant}`]}
+  data-cat={sesion.category}
+  data-cat-alt={(sesion.categoryAlt ?? []).join(',')}
+  data-sala={sesion.sala}
+  data-sesion-id={sesion.id}
+  aria-expanded="false"
+>
+  <div class="card-inner" data-flipped="false">
+    <!-- FRONT -->
+    <article
+      class="card-face card-front"
+      role={isInteractive ? 'button' : undefined}
+      tabindex={isInteractive ? 0 : -1}
+      aria-label={isInteractive ? `Ver detalle de ${sesion.titulo}` : undefined}
+    >
+      <header class="cf-head">
+        <RoomBadge sala={sesion.sala} size="sm" />
+        <span class="cf-time">{formatTimeRange(sesion.inicio, sesion.fin)}</span>
+      </header>
+
+      <h2 class="cf-title">{sesion.titulo}</h2>
+
+      {
+        hasSpeakers && (
+          <ul class="cf-speakers">
+            {sessionSpeakers.slice(0, 3).map((sp) => (
+              <li>
+                <span class="who">{sp.nombre}</span>
+                <span class="role"> · {sp.rol}</span>
+              </li>
+            ))}
+            {moderator && (
+              <li class="mod">
+                <span class="mod-tag">Mod.</span>
+                <span class="who">{moderator.nombre}</span>
+              </li>
+            )}
+          </ul>
+        )
+      }
+
+      <footer class="cf-foot">
+        <span class="cf-tipo">{tipoLabel[sesion.tipo]}</span>
+        <CategoryBadge slug={sesion.category} />
+        {
+          isInteractive && (
+            <span class="cf-chev" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M5 2.5 L10 7 L5 11.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+          )
+        }
+      </footer>
+    </article>
+
+    <!-- BACK -->
+    <article class="card-face card-back" aria-hidden="true">
+      <header class="cb-head">
+        <RoomBadge sala={sesion.sala} size="sm" />
+        <span class="cb-time">{formatTimeRange(sesion.inicio, sesion.fin)}</span>
+        <button class="flip-close" type="button" aria-label="Volver" data-close>
+          <span aria-hidden="true">×</span>
+        </button>
+      </header>
+
+      <h2 class="cb-title">{sesion.titulo}</h2>
+
+      {sesion.descripcion && <p class="cb-desc">{sesion.descripcion}</p>}
+
+      {
+        hasSpeakers && (
+          <section class="cb-speakers-section">
+            <h3 class="cb-section-title">Speakers</h3>
+            <ul class="cb-speakers">
+              {sessionSpeakers.map((sp) => (
+                <li class="cb-speaker">
+                  <div class="cbs-text">
+                    <div class="who">{sp.nombre}</div>
+                    <div class="role">{sp.rol}</div>
+                  </div>
+                  {sp.linkedin && (
+                    <a
+                      class="cbs-li"
+                      href={sp.linkedin}
+                      target="_blank"
+                      rel="noopener me"
+                      aria-label={`LinkedIn de ${sp.nombre}`}
+                    >
+                      in →
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      {
+        moderator && (
+          <section class="cb-mod-section">
+            <h3 class="cb-section-title">Modera</h3>
+            <div class="cb-speaker">
+              <div class="cbs-text">
+                <div class="who">{moderator.nombre}</div>
+                <div class="role">{moderator.rol}</div>
+              </div>
+              {moderator.linkedin && (
+                <a class="cbs-li" href={moderator.linkedin} target="_blank" rel="noopener me" aria-label={`LinkedIn de ${moderator.nombre}`}>
+                  in →
+                </a>
+              )}
+            </div>
+          </section>
+        )
+      }
+
+      <footer class="cb-foot">
+        <button class="cb-btn cb-fav" data-fav data-id={sesion.id} type="button" aria-pressed="false">
+          <span class="cb-fav-empty">☆ Guardar</span>
+          <span class="cb-fav-full" hidden>★ Guardada</span>
+        </button>
+        <button class="cb-btn" data-ics data-id={sesion.id} type="button">
+          + Calendario
+        </button>
+        <a class="cb-btn cb-link" href={`/sesion/${sesion.id}`}>Ver completa →</a>
+      </footer>
+
+      <p class="cb-status" data-status></p>
+    </article>
+  </div>
+</div>
+
+<style>
+  .flip-container {
+    perspective: 1400px;
+    position: relative;
+  }
+
+  .card-inner {
+    position: relative;
+    width: 100%;
+    transition:
+      transform 600ms cubic-bezier(0.7, 0, 0.3, 1),
+      height 500ms cubic-bezier(0.7, 0, 0.3, 1);
+    transform-style: preserve-3d;
+    -webkit-transform-style: preserve-3d;
+  }
+
+  .card-inner[data-flipped='true'] {
+    transform: rotateY(180deg);
+  }
+
+  .card-face {
+    position: absolute;
+    inset: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-lg);
+    padding: var(--s-4);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transition: border-color var(--m-fast) var(--m-ease);
+    overflow: hidden;
+  }
+
+  /* Front is also relative so it contributes to inner's intrinsic size during measure */
+  .card-front {
+    position: relative;
+  }
+
+  .card-face.card-back {
+    transform: rotateY(180deg);
+  }
+
+  /* Only the visible side receives pointer events */
+  .card-inner[data-flipped='false'] .card-back {
+    pointer-events: none;
+  }
+  .card-inner[data-flipped='true'] .card-front {
+    pointer-events: none;
+  }
+
+
+  /* Reduce motion */
+  @media (prefers-reduced-motion: reduce) {
+    .card-inner {
+      transition-duration: 0.01ms;
+    }
+  }
+
+  /* Tipo-based styling */
+  .tipo-break .card-face,
+  .tipo-acreditacion .card-face {
+    background: transparent;
+    border-style: dashed;
+  }
+
+  .card-front {
+    cursor: pointer;
+  }
+
+  .card-front:hover {
+    border-color: var(--hair-bright);
+  }
+
+  .card-front:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+  }
+
+  .tipo-break .card-front,
+  .tipo-acreditacion .card-front {
+    cursor: default;
+  }
+
+  /* FRONT */
+  .cf-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--s-3);
+  }
+
+  .cf-time {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cf-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--t-md);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 0 0 var(--s-3);
+    color: var(--fg);
+  }
+
+  .cf-speakers {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+  }
+
+  .cf-speakers li {
+    font-size: var(--t-sm);
+    line-height: 1.4;
+    color: var(--fg-soft);
+  }
+
+  .cf-speakers .who {
+    color: var(--fg);
+    font-weight: 500;
+  }
+
+  .cf-speakers .role {
+    color: var(--fg-muted);
+  }
+
+  .cf-speakers .mod {
+    color: var(--fg-muted);
+    font-size: var(--t-xs);
+    margin-top: var(--s-1);
+  }
+
+  .cf-speakers .mod .who {
+    color: var(--fg-soft);
+  }
+
+  .mod-tag {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--fg-dim);
+    background: var(--bg-card-2);
+    padding: 2px 5px;
+    border-radius: var(--r-sm);
+    margin-right: var(--s-2);
+    vertical-align: middle;
+  }
+
+  .cf-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-2);
+    margin-top: var(--s-3);
+    padding-top: var(--s-3);
+    border-top: 1px solid var(--hair);
+    flex-wrap: wrap;
+  }
+
+  .cf-tipo {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-dim);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .cf-chev {
+    margin-left: auto;
+    color: var(--fg-dim);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--hair);
+    background: var(--bg);
+    transition:
+      color var(--m-fast) var(--m-ease),
+      border-color var(--m-fast) var(--m-ease),
+      transform var(--m-fast) var(--m-ease);
+  }
+
+  .card-front:hover .cf-chev,
+  .card-front:focus-visible .cf-chev {
+    color: var(--cyan);
+    border-color: var(--cyan);
+    transform: translateX(2px);
+  }
+
+  /* BACK */
+  .card-back {
+    background: var(--bg-elev);
+    border-color: var(--cyan);
+  }
+
+  .cb-head {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    margin-bottom: var(--s-3);
+  }
+
+  .cb-time {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+    flex: 1;
+  }
+
+  .flip-close {
+    background: var(--bg-card);
+    border: 1px solid var(--hair-bright);
+    color: var(--fg);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all var(--m-fast) var(--m-ease);
+  }
+
+  .flip-close:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .cb-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--t-lg);
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    margin: 0 0 var(--s-3);
+    color: var(--fg);
+  }
+
+  .cb-desc {
+    font-family: var(--font-italic);
+    font-style: italic;
+    font-size: var(--t-sm);
+    color: var(--fg-soft);
+    line-height: 1.5;
+    margin: 0 0 var(--s-4);
+  }
+
+  .cb-section-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--fg-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 var(--s-2);
+  }
+
+  .cb-speakers-section,
+  .cb-mod-section {
+    margin-bottom: var(--s-3);
+  }
+
+  .cb-speakers {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+
+  .cb-speaker {
+    display: flex;
+    gap: var(--s-2);
+    align-items: center;
+    background: var(--bg-card);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-sm);
+    padding: var(--s-2) var(--s-3);
+  }
+
+  .cbs-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .cbs-text .who {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--t-sm);
+    color: var(--fg);
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  .cbs-text .role {
+    font-family: var(--font-body);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    margin-top: 1px;
+  }
+
+  .cbs-li {
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--cyan);
+    background: transparent;
+    border: 1px solid var(--cyan);
+    border-radius: var(--r-sm);
+    padding: var(--s-1) var(--s-2);
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .cbs-li:hover {
+    background: var(--cyan);
+    color: var(--bg);
+  }
+
+  .cb-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+    margin-top: var(--s-3);
+    padding-top: var(--s-3);
+    border-top: 1px solid var(--hair);
+  }
+
+  .cb-btn {
+    flex: 1;
+    min-width: 110px;
+    background: var(--bg-card);
+    border: 1px solid var(--hair-bright);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: var(--t-xs);
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    min-height: 36px;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--m-fast) var(--m-ease);
+  }
+
+  .cb-btn:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .cb-btn.is-fav,
+  .cb-btn.is-fav:hover,
+  .cb-btn.is-fav:focus,
+  .cb-btn.is-fav:active {
+    background: #d4a437;
+    border-color: #d4a437;
+    color: var(--bg);
+  }
+
+  .cb-btn.is-fav .cb-fav-full {
+    font-weight: 700;
+  }
+
+  @keyframes favPulse {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.06); }
+    100% { transform: scale(1); }
+  }
+
+  .cb-btn.is-fav.just-toggled {
+    animation: favPulse 320ms var(--m-spring);
+  }
+
+  .cb-link {
+    background: var(--cyan);
+    border-color: var(--cyan);
+    color: var(--bg);
+  }
+
+  .cb-link:hover {
+    background: var(--mint);
+    border-color: var(--mint);
+    color: var(--bg);
+  }
+
+  .cb-status {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    margin: var(--s-2) 0 0;
+    min-height: 1.2em;
+    text-align: center;
+  }
+</style>
+
+<script>
+  type CardEl = HTMLElement & { _wired?: boolean };
+
+  function measureBack(container: HTMLElement): number {
+    const back = container.querySelector<HTMLElement>('.card-back');
+    if (!back) return 0;
+    const prevPos = back.style.position;
+    const prevInset = back.style.inset;
+    const prevTransform = back.style.transform;
+    back.style.position = 'relative';
+    back.style.inset = 'auto';
+    back.style.transform = 'none';
+    const h = back.offsetHeight;
+    back.style.position = prevPos;
+    back.style.inset = prevInset;
+    back.style.transform = prevTransform;
+    return h;
+  }
+
+  function flip(container: HTMLElement, state: boolean) {
+    const inner = container.querySelector<HTMLElement>('.card-inner');
+    const front = container.querySelector<HTMLElement>('.card-front');
+    const back = container.querySelector<HTMLElement>('.card-back');
+    if (!inner || !front || !back) return;
+
+    container.setAttribute('aria-expanded', String(state));
+    back.setAttribute('aria-hidden', String(!state));
+
+    if (state) {
+      const frontH = front.offsetHeight;
+      const backH = measureBack(container);
+      // Lock current height before animating
+      inner.style.height = `${frontH}px`;
+      // Force reflow so the height transition has a starting frame
+      void inner.offsetHeight;
+      requestAnimationFrame(() => {
+        inner.style.height = `${backH}px`;
+        inner.dataset.flipped = 'true';
+      });
+    } else {
+      const currentH = inner.offsetHeight;
+      const frontH = front.offsetHeight;
+      inner.style.height = `${currentH}px`;
+      void inner.offsetHeight;
+      requestAnimationFrame(() => {
+        inner.style.height = `${frontH}px`;
+        inner.dataset.flipped = 'false';
+      });
+      // After the transition completes, release the inline height
+      const onEnd = (e: TransitionEvent) => {
+        if (e.propertyName !== 'height') return;
+        if (inner.dataset.flipped === 'false') {
+          inner.style.height = '';
+        }
+        inner.removeEventListener('transitionend', onEnd);
+      };
+      inner.addEventListener('transitionend', onEnd);
+    }
+  }
+
+  function closeOthers(current: HTMLElement) {
+    document.querySelectorAll<HTMLElement>('.flip-container').forEach((el) => {
+      if (el === current) return;
+      const inner = el.querySelector<HTMLElement>('.card-inner');
+      if (inner?.dataset.flipped === 'true') flip(el, false);
+    });
+  }
+
+  function setupCard(container: CardEl) {
+    if (container._wired) return;
+    container._wired = true;
+
+    const front = container.querySelector<HTMLElement>('.card-front');
+    const close = container.querySelector<HTMLButtonElement>('[data-close]');
+    if (!front) return;
+
+    const interactive = front.getAttribute('role') === 'button';
+
+    if (interactive) {
+      front.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('a, button')) return;
+        closeOthers(container);
+        flip(container, true);
+      });
+      front.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          closeOthers(container);
+          flip(container, true);
+        }
+      });
+    }
+
+    close?.addEventListener('click', () => flip(container, false));
+
+    container.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const inner = container.querySelector<HTMLElement>('.card-inner');
+      if (inner?.dataset.flipped === 'true') {
+        flip(container, false);
+        front.focus();
+      }
+    });
+  }
+
+  const STORAGE_KEY = 'aifi26.favorites';
+
+  function getStored(): string[] {
+    try {
+      return (localStorage.getItem(STORAGE_KEY) ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+
+  function setStored(ids: string[]) {
+    try {
+      localStorage.setItem(STORAGE_KEY, ids.join(','));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function refreshFavBtn(btn: HTMLButtonElement) {
+    const id = btn.dataset.id;
+    if (!id) return;
+    const has = getStored().includes(id);
+    btn.classList.toggle('is-fav', has);
+    btn.setAttribute('aria-pressed', String(has));
+    const empty = btn.querySelector<HTMLElement>('.cb-fav-empty');
+    const full = btn.querySelector<HTMLElement>('.cb-fav-full');
+    if (empty) empty.hidden = has;
+    if (full) full.hidden = !has;
+  }
+
+  function setupFavBtn(btn: HTMLButtonElement) {
+    refreshFavBtn(btn);
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      if (!id) return;
+      const stored = getStored();
+      const wasFav = stored.includes(id);
+      if (wasFav) setStored(stored.filter((x) => x !== id));
+      else setStored([...stored, id]);
+      refreshFavBtn(btn);
+
+      // Pulse + clear lingering :hover state on mobile
+      btn.classList.remove('just-toggled');
+      void btn.offsetWidth;
+      btn.classList.add('just-toggled');
+      btn.blur();
+
+      const status = btn.closest('.card-back')?.querySelector<HTMLElement>('[data-status]');
+      if (status) {
+        status.textContent = !wasFav ? '✓ guardada en Mi día' : '✓ quitada de Mi día';
+        setTimeout(() => (status.textContent = ''), 2500);
+      }
+    });
+  }
+
+  function escapeIcs(s: string): string {
+    return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+  }
+
+  function toIcsLocal(iso: string): string {
+    const [date, time] = iso.replace('-03:00', '').split('T');
+    return `${date!.replace(/-/g, '')}T${time!.replace(/:/g, '')}`;
+  }
+
+  function downloadIcsFor(id: string) {
+    const data = (window as any).__AIFI_DATA__;
+    if (!data) return;
+    const sesion = data.sesiones.find((s: any) => s.id === id);
+    if (!sesion) return;
+    const speakersById = new Map<string, any>(data.speakers.map((s: any) => [s.id, s]));
+    const desc = [
+      sesion.descripcion ?? '',
+      '',
+      'Speakers:',
+      ...sesion.speakers.map((sid: string) => speakersById.get(sid)).filter(Boolean).map((sp: any) => `· ${sp.nombre} — ${sp.rol}`),
+      sesion.moderador && speakersById.get(sesion.moderador)
+        ? `Moderador: ${speakersById.get(sesion.moderador).nombre} — ${speakersById.get(sesion.moderador).rol}`
+        : '',
+    ].filter(Boolean).join('\n');
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+    const SALA_NOMBRE_JS: Record<string, string> = {
+      pacifico: 'Pacífico',
+      'atlantico-b': 'Atlántico B',
+      'atlantico-c': 'Atlántico C',
+    };
+    const body = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//AIFI26//cronograma no oficial//ES',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      `UID:${sesion.id}@aifi26`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART;TZID=America/Argentina/Buenos_Aires:${toIcsLocal(sesion.inicio)}`,
+      `DTEND;TZID=America/Argentina/Buenos_Aires:${toIcsLocal(sesion.fin)}`,
+      `SUMMARY:${escapeIcs(sesion.titulo)}`,
+      `LOCATION:${escapeIcs('Salón ' + SALA_NOMBRE_JS[sesion.sala] + ' · Hotel Hilton Buenos Aires')}`,
+      `DESCRIPTION:${escapeIcs(desc)}`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
+    const blob = new Blob([body], { type: 'text/calendar' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `aifi26-${sesion.id}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function setupIcsBtn(btn: HTMLButtonElement) {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      if (!id) return;
+      downloadIcsFor(id);
+      const status = btn.closest('.card-back')?.querySelector<HTMLElement>('[data-status]');
+      if (status) {
+        status.textContent = '✓ descargado';
+        setTimeout(() => (status.textContent = ''), 2500);
+      }
+    });
+  }
+
+  function setupAll() {
+    document.querySelectorAll<HTMLElement>('.flip-container').forEach(setupCard);
+    document.querySelectorAll<HTMLButtonElement>('[data-fav]').forEach(setupFavBtn);
+    document.querySelectorAll<HTMLButtonElement>('[data-ics]').forEach(setupIcsBtn);
+  }
+
+  function resetOpenCards() {
+    document.querySelectorAll<HTMLElement>('.flip-container').forEach((el) => {
+      const inner = el.querySelector<HTMLElement>('.card-inner');
+      if (inner?.dataset.flipped === 'true') {
+        inner.style.height = '';
+        flip(el, false);
+      }
+    });
+  }
+
+  document.addEventListener('astro:page-load', setupAll);
+  setupAll();
+
+  // On resize, close any open cards so heights recompute next time
+  let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+  window.addEventListener('resize', () => {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resetOpenCards, 150);
+  });
+
+  // Global ESC close
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    document.querySelectorAll<HTMLElement>('.flip-container').forEach((el) => {
+      const inner = el.querySelector<HTMLElement>('.card-inner');
+      if (inner?.dataset.flipped === 'true') flip(el, false);
+    });
+  });
+</script>

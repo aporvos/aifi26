@@ -1,0 +1,359 @@
+[
+  {
+    "id": "hernan-litvac",
+    "nombre": "Hernan Litvac",
+    "rol": "Co-Founder icomm · Board Member AI IN LATAM",
+    "linkedin": "https://www.linkedin.com/in/hernanlitvac/",
+    "bio": "Co-founder de icomm y board AI IN LATAM, especializado en marketing, customer engagement y adopción de IA en negocios."
+  },
+  {
+    "id": "daniel-jejcic",
+    "nombre": "Daniel Jejcic",
+    "rol": "CEO Avenida+ · Board Member AI IN LATAM",
+    "linkedin": "https://www.linkedin.com/in/danieljejcic/",
+    "bio": "CEO de Avenida+ y board AI IN LATAM, impulsa comercio digital, ecosistema fintech y uso práctico de agentes e IA."
+  },
+  {
+    "id": "juan-parma",
+    "nombre": "Juan Parma",
+    "rol": "CEO Banco Macro",
+    "linkedin": "https://www.linkedin.com/in/juan-parma",
+    "bio": "CEO de Banco Macro, lidera estrategia de banca minorista y agenda de transformación digital en Argentina."
+  },
+  {
+    "id": "diego-rivas",
+    "nombre": "Diego Rivas",
+    "rol": "CEO Banco Galicia",
+    "bio": "CEO de Banco Galicia, enfocado en innovación de servicios financieros, omnicanalidad y experiencia integral de clientes."
+  },
+  {
+    "id": "vicente-gutierrez",
+    "nombre": "Vicente Gutierrez",
+    "rol": "Investment Banking Banco Galicia · Presidente ADEBA Joven",
+    "linkedin": "https://www.linkedin.com/in/vicente-antonio-gutierrez-2876b6205/",
+    "bio": "Investment Banking en Banco Galicia y presidente ADEBA Joven, conecta banca corporativa, regulación y agenda sectorial."
+  },
+  {
+    "id": "natalia-scaliter",
+    "nombre": "Natalia Scaliter",
+    "rol": "Gerente General Google Cloud Argentina",
+    "linkedin": "https://www.linkedin.com/in/nataliascaliter/",
+    "bio": "Gerente General de Google Cloud Argentina, impulsa adopción de nube, datos e IA en bancos y grandes empresas."
+  },
+  {
+    "id": "rafael-soto",
+    "nombre": "Rafael Soto",
+    "rol": "CEO Modo",
+    "linkedin": "https://www.linkedin.com/in/rafasoto/",
+    "bio": "CEO de Modo, referente en pagos digitales interoperables y billeteras móviles del ecosistema bancario argentino."
+  },
+  {
+    "id": "martin-heine",
+    "nombre": "Martin Heine",
+    "rol": "CEO Personal Pay",
+    "linkedin": "https://www.linkedin.com/in/mart%C3%ADn-heine-b656188",
+    "bio": "CEO de Personal Pay, desarrolla billetera digital y servicios financieros embebidos orientados al mass market."
+  },
+  {
+    "id": "mauro-cercos",
+    "nombre": "Mauro Cercos",
+    "rol": "Gerente General YPF Digital",
+    "linkedin": "https://www.linkedin.com/in/mauro-cercos/",
+    "bio": "Gerente General de YPF Digital, lidera iniciativas digitales ligadas a energía, movilidad, fidelidad y pagos."
+  },
+  {
+    "id": "juan-pablo-boccardi",
+    "nombre": "Juan Pablo Boccardi",
+    "rol": "VP GTM Strategy Simetrik",
+    "linkedin": "https://www.linkedin.com/in/juanpabloboccardi",
+    "bio": "VP GTM Strategy en Simetrik, combina estrategia comercial, fintech y soluciones de reconciliación financiera para empresas."
+  },
+  {
+    "id": "santino-ruzzante",
+    "nombre": "Santino Ruzzante",
+    "rol": "CCO Conexa",
+    "linkedin": "https://www.linkedin.com/in/santino-ruzzante-a948781b4/",
+    "bio": "CCO en Conexa, enfocado en crecimiento comercial y soluciones de pagos, integraciones y cobranzas digitales."
+  },
+  {
+    "id": "lucas-garcia-nougues",
+    "nombre": "Lucas Garcia Nougues",
+    "rol": "VP of Product & UX Payway",
+    "linkedin": "https://www.linkedin.com/in/lucas-gracia-nougues-17a25056",
+    "bio": "VP de Product & UX en Payway, diseña experiencias de pago omnicanal y productos para comercios."
+  },
+  {
+    "id": "gustavo-paco-manriquez",
+    "nombre": "Gustavo Paco Manriquez",
+    "rol": "CEO Banco Supervielle",
+    "linkedin": "https://www.linkedin.com/in/gustavopacomanriquez/",
+    "bio": "CEO de Banco Supervielle, impulsa modernización de banca tradicional con foco en pymes, individuos y canales digitales."
+  },
+  {
+    "id": "pablo-quirno",
+    "nombre": "Pablo Quirno",
+    "rol": "Country Manager Ualá",
+    "linkedin": "https://www.linkedin.com/in/pablo-quirno-3895889b",
+    "bio": "Country Manager de Ualá, lidera crecimiento del neobanco y productos de inclusión financiera digital."
+  },
+  {
+    "id": "manuel-herrera",
+    "nombre": "Manuel Herrera",
+    "rol": "CEO Banco Hipotecario",
+    "linkedin": "https://www.linkedin.com/in/manuel-herrera-2903a02b/",
+    "bio": "CEO de Banco Hipotecario, conduce banca tradicional y crédito hipotecario con foco en transformación digital."
+  },
+  {
+    "id": "pablo-moauro",
+    "nombre": "Pablo Moauro",
+    "rol": "Chief Economist ADEBA",
+    "linkedin": "https://www.linkedin.com/in/pablo-moauro-71a9276a",
+    "bio": "Chief Economist en ADEBA, aporta visión macroeconómica, regulatoria y de sistema financiero argentino."
+  },
+  {
+    "id": "cristian-deferrari",
+    "nombre": "Cristian Deferrari",
+    "rol": "Head de Plataformas & Gen AI Naranja X",
+    "linkedin": "https://www.linkedin.com/in/cristiandeferrari/",
+    "bio": "Head de Plataformas & Gen AI en Naranja X, lidera plataformas tecnológicas y casos de uso de IA generativa."
+  },
+  {
+    "id": "daniel-rabinovich",
+    "nombre": "Daniel Rabinovich",
+    "rol": "COO & CTO Mercado Libre",
+    "linkedin": "https://www.linkedin.com/in/drabinovich",
+    "bio": "COO & CTO de Mercado Libre, responsable de operaciones y tecnología de la plataforma de ecommerce y fintech regional."
+  },
+  {
+    "id": "guillermo-jejcic",
+    "nombre": "Guillermo Jejcic",
+    "rol": "Head of Retail Banking & ATO Banco Macro",
+    "linkedin": "https://www.linkedin.com/in/guillermojejcic/",
+    "bio": "Head of Retail Banking & ATO en Banco Macro, trabaja en banca minorista, operaciones y automatización con IA."
+  },
+  {
+    "id": "fernando-turri",
+    "nombre": "Fernando Turri",
+    "rol": "EVP Tech & OPS, Data & IA Santander",
+    "linkedin": "https://www.linkedin.com/in/fernandoturri",
+    "bio": "EVP Tech & OPS, Data & IA en Santander, integra tecnología, datos y operaciones para escalar soluciones de IA."
+  },
+  {
+    "id": "matias-hirschmann",
+    "nombre": "Matias Hirschmann",
+    "rol": "Director Académico AI IN LATAM",
+    "linkedin": "https://www.linkedin.com/in/matiashirschmann",
+    "bio": "Director Académico en AI IN LATAM, diseña programas de formación ejecutiva y contenidos sobre IA aplicada."
+  },
+  {
+    "id": "julian-drault",
+    "nombre": "Julian Drault",
+    "rol": "Co-Founder emBlue",
+    "linkedin": "https://www.linkedin.com/in/juliandrault",
+    "bio": "Co-founder de emBlue, especialista en customer engagement, marketing automation y personalización basada en datos."
+  },
+  {
+    "id": "santiago-farcuh",
+    "nombre": "Santiago Farcuh Gutierrez Walker",
+    "rol": "CEO Digiconsulting",
+    "linkedin": "https://www.linkedin.com/in/santiago-farcuh",
+    "bio": "CEO de Digiconsulting, asesora en estrategia digital, data y proyectos de IA para empresas."
+  },
+  {
+    "id": "esteban-elia",
+    "nombre": "Esteban Elia",
+    "rol": "Head of AI & Data Science MODO",
+    "linkedin": "https://www.linkedin.com/in/estebanelia/",
+    "bio": "Head of AI & Data Science en MODO, desarrolla modelos y productos data-driven para pagos digitales."
+  },
+  {
+    "id": "pablo-guzzi",
+    "nombre": "Pablo Guzzi",
+    "rol": "Chief Data & AI Officer Ualá",
+    "linkedin": "https://www.linkedin.com/in/pablo-a-guzzi",
+    "bio": "Chief Data & AI Officer en Ualá, lidera estrategia de datos, analítica avanzada y aplicaciones de IA."
+  },
+  {
+    "id": "sebastian-siseles",
+    "nombre": "Sebastian Siseles",
+    "rol": "CEO Vesseo",
+    "linkedin": "https://www.linkedin.com/in/sebasti%C3%A1n-siseles-43a6486/",
+    "bio": "CEO de Vesseo, ejecutivo enfocado en expansión internacional, partnerships y plataformas digitales."
+  },
+  {
+    "id": "gus-campos",
+    "nombre": "Gus Campos",
+    "rol": "Fintech Product Director Mercado Libre",
+    "linkedin": "https://www.linkedin.com/in/gus-campos-18903930",
+    "bio": "Fintech Product Director en Mercado Libre, diseña productos financieros digitales y experiencias para usuarios y comercios."
+  },
+  {
+    "id": "joaquin-bossie",
+    "nombre": "Joaquín Bossié",
+    "rol": "CRO & Co-Founder Minders",
+    "linkedin": "https://www.linkedin.com/in/joacobossie",
+    "bio": "CRO & Co-founder en Minders, enfocado en revenue growth, analítica y soluciones de IA para organizaciones."
+  },
+  {
+    "id": "martin-fernandez-canto",
+    "nombre": "Martín Fernández Canto",
+    "rol": "Global Sales Director Numia",
+    "bio": "Global Sales Director en Numia, combina ventas enterprise, data products y soluciones de inteligencia artificial."
+  },
+  {
+    "id": "tomas-picasso",
+    "nombre": "Tomás Picasso",
+    "rol": "Business Director Meta",
+    "linkedin": "https://www.linkedin.com/in/tom%C3%A1s-picasso-47344210",
+    "bio": "Business Director en Meta, colabora con bancos y fintech en publicidad digital, performance y experiencia de usuario."
+  },
+  {
+    "id": "sebastian-chuffer",
+    "nombre": "Sebastián Chuffer",
+    "rol": "CEO Ruptive AI",
+    "bio": "CEO de Ruptive AI, especializado en automatizar producción de contenido y video mediante inteligencia artificial."
+  },
+  {
+    "id": "mariana-martinez-brizuela",
+    "nombre": "Mariana Martinez Brizuela",
+    "rol": "Socia Servicios Industria Financiera BDO",
+    "linkedin": "https://www.linkedin.com/in/mariana-martinez-brizuela-366a839",
+    "bio": "Socia en BDO, experta en servicios para industria financiera, riesgo, compliance y regulaciones."
+  },
+  {
+    "id": "maximiliano-britez",
+    "nombre": "Maximiliano Britez",
+    "rol": "Director de Ingeniería Redbee",
+    "linkedin": "https://www.linkedin.com/in/maximiliano-britez/",
+    "bio": "Director de Ingeniería en Redbee, lidera modernización de sistemas legados y construcción de plataformas financieras."
+  },
+  {
+    "id": "gabriela-macagni",
+    "nombre": "Gabriela Macagni",
+    "rol": "Co-Founder & Managing Partner MatterScale Ventures",
+    "linkedin": "https://www.linkedin.com/in/gabriela-macagni",
+    "bio": "Co-founder & Managing Partner en MatterScale Ventures, inversora en startups de impacto y tecnología en Latam."
+  },
+  {
+    "id": "mariano-mayer",
+    "nombre": "Mariano Mayer",
+    "rol": "Managing Partner & Co-Founder Newtopia VC",
+    "linkedin": "https://www.linkedin.com/in/mariano-mayer-8138122",
+    "bio": "Managing Partner & Co-founder en Newtopia VC, inversor en startups tempranas del ecosistema emprendedor regional."
+  },
+  {
+    "id": "micaela-bacher",
+    "nombre": "Micaela Bacher",
+    "rol": "Principal Natan VC",
+    "linkedin": "https://www.linkedin.com/in/micaelabacher",
+    "bio": "Principal en Natan VC, trabaja en inversiones, portfolio y network en fondos de venture capital."
+  },
+  {
+    "id": "fernando-paez-solchaga",
+    "nombre": "Fernando Paez Solchaga",
+    "rol": "Executive Director ARCAP",
+    "linkedin": "https://www.linkedin.com/in/fpaezsolchaga",
+    "bio": "Executive Director en ARCAP, referente del ecosistema de capital privado y venture capital argentino."
+  },
+  {
+    "id": "bruno-ruyu",
+    "nombre": "Bruno Ruyu",
+    "rol": "CEO & Co-Founder Teramot",
+    "linkedin": "https://www.linkedin.com/in/bruno-ruyu/",
+    "bio": "CEO & Co-founder en Teramot, construye infraestructura fintech y soluciones para innovadores financieros."
+  },
+  {
+    "id": "tomas-mindlin",
+    "nombre": "Tomas Mindlin",
+    "rol": "CEO Tapi",
+    "bio": "CEO de Tapi, founder de soluciones de APIs e infraestructura para fintechs y bancos."
+  },
+  {
+    "id": "lucas-ranallo",
+    "nombre": "Lucas Ranallo",
+    "rol": "CEO & Co-Founder Complif",
+    "linkedin": "https://www.linkedin.com/in/lucasranallo",
+    "bio": "CEO & Co-founder en Complif, desarrolla soluciones de compliance y monitoreo regulatorio para servicios financieros."
+  },
+  {
+    "id": "julia-bearzi",
+    "nombre": "Julia Bearzi",
+    "rol": "Directora Ejecutiva Endeavor Argentina",
+    "linkedin": "https://www.linkedin.com/in/mar%C3%ADa-julia-bearzi/",
+    "bio": "Directora Ejecutiva en Endeavor Argentina, impulsa emprendedores de alto impacto y scaleups tecnológicas."
+  },
+  {
+    "id": "candelaria-villagra",
+    "nombre": "Candelaria Villagra",
+    "rol": "Head of Banking as a Service BIND",
+    "linkedin": "https://www.linkedin.com/in/candelariavillagra",
+    "bio": "Head of Banking as a Service en BIND, lidera oferta BaaS y servicios bancarios embebidos."
+  },
+  {
+    "id": "maria-de-los-angeles-ojeda",
+    "nombre": "María de los Ángeles Ojeda",
+    "rol": "Head de Productos y Aplicaciones Banco CMF",
+    "linkedin": "https://www.linkedin.com/in/maria-de-los-angeles-ojeda-ab0a6624",
+    "bio": "Head de Productos y Aplicaciones en Banco CMF, gestiona roadmap de productos digitales y canales."
+  },
+  {
+    "id": "hernan-villegas",
+    "nombre": "Hernan Villegas",
+    "rol": "CEO Banco de Comercio",
+    "linkedin": "https://www.linkedin.com/in/hernan-villegas",
+    "bio": "CEO de Banco de Comercio, orientado a banca corporativa, productos financieros y modernización tecnológica."
+  },
+  {
+    "id": "tomas-ramella",
+    "nombre": "Tomas Ramella",
+    "rol": "Co-Founder & CEO Gu1",
+    "linkedin": "https://www.linkedin.com/in/tomasramella/",
+    "bio": "Co-founder & CEO en Gu1, trabaja en soluciones fintech, BaaS y productos bancarios como servicio."
+  },
+  {
+    "id": "adrian-kogutek",
+    "nombre": "Adrian Kogutek",
+    "rol": "CEO Great Challenge Group",
+    "linkedin": "https://www.linkedin.com/in/adriankogutek",
+    "bio": "CEO de Great Challenge Group, especializado en seguridad, procesos críticos y gestión de riesgos tecnológicos."
+  },
+  {
+    "id": "lionel-cymerman",
+    "nombre": "Lionel Cymerman",
+    "rol": "CTO 4iDigital",
+    "linkedin": "https://www.linkedin.com/in/lcymerman",
+    "bio": "CTO en 4iDigital, lidera soluciones de automatización, IA y tecnología para procesos financieros."
+  },
+  {
+    "id": "lorena-comino",
+    "nombre": "Lorena Comino",
+    "rol": "CEO Facturante",
+    "bio": "CEO de Facturante, impulsa facturación electrónica, automatización fiscal y servicios para pymes."
+  },
+  {
+    "id": "gabriela-szlak",
+    "nombre": "Gabriela Szlak",
+    "rol": "Managing Partner Lerman & Szlak",
+    "linkedin": "https://www.linkedin.com/in/gabrielaszlak/",
+    "bio": "Managing Partner en Lerman & Szlak, abogada especializada en IT, privacidad de datos y regulación de IA."
+  },
+  {
+    "id": "gaspar-mac",
+    "nombre": "Gaspar Mac",
+    "rol": "Director Estratégico & Co-Founder Ecloud Agency",
+    "linkedin": "https://www.linkedin.com/in/gasparmac/",
+    "bio": "Director Estratégico y Co-founder en Ecloud Agency, enfocado en automatización, martech y agentes para negocio digital."
+  },
+  {
+    "id": "mariano-cirio",
+    "nombre": "Mariano Cirio",
+    "rol": "Gerente General Mercado Argentino de Valores",
+    "bio": "Gerente General del Mercado Argentino de Valores (MAV), experto en mercado de capitales y productos bursátiles."
+  },
+  {
+    "id": "gustavo-koblinc",
+    "nombre": "Gustavo Koblinc",
+    "rol": "CXO Grupo Omint",
+    "bio": "CXO en Grupo Omint, trabaja en experiencia de cliente, innovación y servicios en seguros y salud."
+  }
+]

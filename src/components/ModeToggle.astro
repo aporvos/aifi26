@@ -1,0 +1,83 @@
+---
+type Mode = 'ahora' | 'dia' | 'mi-dia';
+interface Props {
+  active: Mode;
+}
+const { active } = Astro.props;
+
+const modes: { id: Mode; label: string; href: string }[] = [
+  { id: 'ahora', label: 'Ahora', href: '/ahora' },
+  { id: 'dia', label: 'Día', href: '/dia' },
+  { id: 'mi-dia', label: 'Mi día', href: '/mi-dia' },
+];
+---
+
+<div class="modes-bar">
+  <nav class="modes" aria-label="Modo de vista">
+    {
+      modes.map((m) => (
+        <a
+          class:list={['mode', { active: m.id === active }]}
+          href={m.href}
+          aria-current={m.id === active ? 'page' : undefined}
+        >
+          {m.label}
+        </a>
+      ))
+    }
+  </nav>
+</div>
+
+<style>
+  .modes-bar {
+    position: sticky;
+    top: var(--ticker-h);
+    z-index: 40;
+    background: var(--bg);
+    padding: var(--s-3) var(--s-4);
+    border-bottom: 1px solid var(--hair);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .modes {
+    display: flex;
+    gap: 2px;
+    background: var(--bg-elev);
+    padding: 3px;
+    margin: 0 auto;
+    max-width: var(--container-max);
+    border-radius: var(--r-pill);
+    border: 1px solid var(--hair);
+  }
+
+  .mode {
+    flex: 1;
+    text-align: center;
+    padding: var(--s-3) 0;
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    font-weight: 500;
+    color: var(--fg-muted);
+    text-decoration: none;
+    border-radius: var(--r-pill);
+    letter-spacing: -0.01em;
+    min-height: var(--touch-min);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+      background var(--m-fast) var(--m-ease),
+      color var(--m-fast) var(--m-ease);
+  }
+
+  .mode.active {
+    background: var(--cyan);
+    color: var(--bg);
+    font-weight: 600;
+  }
+
+  .mode:hover:not(.active) {
+    color: var(--fg);
+  }
+</style>
