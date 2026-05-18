@@ -208,20 +208,22 @@ const hourMarks = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
 
       if (isPre) {
         const days = Math.ceil((EVENT_START_MS - t) / 86_400_000);
-        const label =
-          days <= 0
-            ? 'el evento arranca hoy · 08:00'
-            : days === 1
-              ? 'arranca mañana'
-              : `faltan ${days} días`;
-        eyebrow.textContent = label;
-        time.textContent = '21 may';
+        if (days <= 0) {
+          eyebrow.textContent = 'arranca hoy';
+          time.textContent = '08:00';
+        } else if (days === 1) {
+          eyebrow.textContent = 'arranca';
+          time.textContent = 'mañana';
+        } else {
+          eyebrow.textContent = 'faltan';
+          time.textContent = `${days} días`;
+        }
         return;
       }
 
       if (isPost) {
         eyebrow.textContent = 'el evento terminó';
-        time.textContent = '21 may';
+        time.textContent = 'archivo';
         return;
       }
 
