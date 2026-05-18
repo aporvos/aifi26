@@ -850,9 +850,14 @@ const isInteractive = !['break', 'acreditacion'].includes(sesion.tipo);
   document.addEventListener('astro:page-load', setupAll);
   setupAll();
 
-  // On resize, close any open cards so heights recompute next time
+  // On resize, close any open cards so heights recompute next time.
+  // Ignore height-only changes — on mobile the URL bar show/hide during scroll
+  // fires resize and would otherwise spuriously close open cards mid-read.
   let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+  let lastWidth = window.innerWidth;
   window.addEventListener('resize', () => {
+    if (window.innerWidth === lastWidth) return;
+    lastWidth = window.innerWidth;
     if (resizeTimer) clearTimeout(resizeTimer);
     resizeTimer = setTimeout(resetOpenCards, 150);
   });
