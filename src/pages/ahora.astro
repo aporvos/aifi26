@@ -608,8 +608,17 @@ const hourMarks = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
     padding: 2px 0;
   }
 
+  /* First tick (08:00) sits at top: 0 — align to top instead of centering
+     so it isn't clipped by the sticky room headers above. */
+  .tl-tick:first-child {
+    transform: translateY(0);
+  }
+
+  /* Last tick (17:30) at top: TL_HEIGHT — align to bottom edge so it doesn't
+     spill past the timeline border. */
   .tl-tick-end {
     color: var(--fg-dim);
+    transform: translateY(-100%);
   }
 
   /* Sala columns */
