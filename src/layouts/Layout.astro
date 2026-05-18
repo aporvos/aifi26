@@ -51,6 +51,15 @@ const fullTitle = title.includes('AIFI26') ? title : `${title} · AIFI26`;
     />
 
     <ClientRouter />
+
+    {
+      import.meta.env.PROD && (
+        <>
+          <script is:inline defer src="/_vercel/insights/script.js" />
+          <script is:inline defer src="/_vercel/speed-insights/script.js" />
+        </>
+      )
+    }
   </head>
   <body>
     <a class="visually-hidden skip-link" href="#main">Saltar al contenido</a>
