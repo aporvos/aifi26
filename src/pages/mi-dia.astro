@@ -42,11 +42,14 @@ const speakers = speakersData as Speaker[];
           <span class="stat-num" id="stat-duration">--</span>
           <span class="stat-label">total</span>
         </li>
-        <li class="stat" id="stat-spread-li" hidden>
-          <span class="stat-num" id="stat-spread">--</span>
-          <span class="stat-label">cubierto</span>
-        </li>
       </ul>
+
+      <div id="export-bar" class="export-bar" hidden>
+        <button class="btn btn-primary btn-hero" id="ics-btn" type="button">
+          <span class="btn-icon" aria-hidden="true">↓</span> Exportar a tu calendario
+        </button>
+        <p class="actions-hint">Compatible con Google Calendar, Apple, Outlook · descarga un archivo .ics</p>
+      </div>
     </div>
   </header>
 
@@ -75,11 +78,6 @@ const speakers = speakersData as Speaker[];
 
   <section id="actions-bar" class="actions-bar" aria-label="Acciones" hidden>
     <div class="container">
-      <button class="btn btn-primary btn-hero" id="ics-btn" type="button">
-        <span class="btn-icon" aria-hidden="true">↓</span> Exportar a tu calendario
-      </button>
-      <p class="actions-hint">Compatible con Google Calendar, Apple, Outlook · descarga un archivo .ics</p>
-
       <div class="actions-secondary">
         <button class="btn" id="share-btn" type="button">
           <span class="btn-icon" aria-hidden="true">↗</span> Compartir
@@ -168,10 +166,6 @@ const speakers = speakersData as Speaker[];
       return m === 0 ? `${h}h` : `${h}h ${m}m`;
     }
 
-    function fmtRange(a, b) {
-      return `${a.slice(11, 16)}–${b.slice(11, 16)}`;
-    }
-
     function escapeHtml(s) {
       return String(s)
         .replace(/&/g, '&amp;')
@@ -184,19 +178,8 @@ const speakers = speakersData as Speaker[];
     function renderStats(list) {
       const count = list.length;
       const totalMin = list.reduce((acc, s) => acc + durationMin(s), 0);
-      const spread = count > 0 ? fmtRange(list[0].inicio, list[list.length - 1].fin) : '--';
-
       document.getElementById('stat-count').textContent = String(count);
       document.getElementById('stat-duration').textContent = count > 0 ? fmtDuration(totalMin) : '--';
-
-      const spreadLi = document.getElementById('stat-spread-li');
-      const spreadEl = document.getElementById('stat-spread');
-      if (count > 0) {
-        spreadEl.textContent = spread;
-        spreadLi.hidden = false;
-      } else {
-        spreadLi.hidden = true;
-      }
     }
 
     function timeToMin(iso) {
@@ -275,10 +258,12 @@ const speakers = speakersData as Speaker[];
     function renderEmpty(ids) {
       const empty = document.getElementById('empty-state');
       const actions = document.getElementById('actions-bar');
-      if (!empty || !actions) return;
+      const exportBar = document.getElementById('export-bar');
+      if (!empty || !actions || !exportBar) return;
       const isEmpty = ids.length === 0;
       empty.hidden = !isEmpty;
       actions.hidden = isEmpty;
+      exportBar.hidden = isEmpty;
     }
 
     function renderAll(ids) {
@@ -574,12 +559,6 @@ const speakers = speakersData as Speaker[];
     gap: var(--s-3);
   }
 
-  @media (min-width: 480px) {
-    .stats {
-      grid-template-columns: repeat(4, 1fr);
-    }
-  }
-
   .stat {
     background: var(--bg-card);
     border: 1px solid var(--hair);
@@ -588,10 +567,6 @@ const speakers = speakersData as Speaker[];
     display: flex;
     flex-direction: column;
     gap: 2px;
-  }
-
-  .stat[hidden] {
-    display: none;
   }
 
   .stat-num {
@@ -707,6 +682,14 @@ const speakers = speakersData as Speaker[];
     margin-top: var(--s-4);
   }
 
+  .export-bar {
+    margin-top: var(--s-4);
+  }
+
+  .export-bar[hidden] {
+    display: none;
+  }
+
   .btn-hero {
     width: 100%;
     padding: var(--s-4) var(--s-4);
@@ -732,8 +715,6 @@ const speakers = speakersData as Speaker[];
     display: flex;
     flex-wrap: wrap;
     gap: var(--s-2);
-    padding-top: var(--s-3);
-    border-top: 1px solid var(--hair);
   }
 
   .actions-secondary .btn {
