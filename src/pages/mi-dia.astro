@@ -38,10 +38,6 @@ const speakers = speakersData as Speaker[];
           <span class="stat-num" id="stat-count">0</span>
           <span class="stat-label">sesiones</span>
         </li>
-        <li class="stat stat-conflict" id="stat-conflict-li" hidden>
-          <span class="stat-num" id="stat-conflict">0</span>
-          <span class="stat-label">conflictos</span>
-        </li>
         <li class="stat">
           <span class="stat-num" id="stat-duration">--</span>
           <span class="stat-label">total</span>
@@ -62,24 +58,8 @@ const speakers = speakersData as Speaker[];
         <span class="ea-block ea-3"></span>
       </div>
       <h2 class="empty-title">Tu día está vacío</h2>
-      <p class="empty-sub">Andá a Día completo, tocá las charlas que querés ver, y volvé.<br />Detectamos conflictos solos.</p>
+      <p class="empty-sub">Andá a Día completo, tocá las charlas que querés ver, y volvé.</p>
       <a class="btn btn-primary" href="/dia">Armar mi día →</a>
-    </div>
-  </section>
-
-  <section
-    id="conflict-section"
-    class="conflict-section"
-    aria-label="Conflictos a resolver"
-    hidden
-  >
-    <div class="container">
-      <header class="cs-head">
-        <span class="cs-tag">⚠ decisiones por tomar</span>
-        <h2 class="cs-title" id="conflict-title">2 conflictos</h2>
-        <p class="cs-sub">Dos charlas se pisan al mismo tiempo. Decidí cuál te quedás.</p>
-      </header>
-      <div id="conflict-list" class="conflict-list"></div>
     </div>
   </section>
 
@@ -177,25 +157,6 @@ const speakers = speakersData as Speaker[];
         .sort((a, b) => new Date(a.inicio).getTime() - new Date(b.inicio).getTime());
     }
 
-    function hasOverlap(a, b) {
-      return new Date(a.inicio).getTime() < new Date(b.fin).getTime() &&
-        new Date(b.inicio).getTime() < new Date(a.fin).getTime();
-    }
-
-    function findConflictPairs(list) {
-      const pairs = [];
-      for (let i = 0; i < list.length; i++) {
-        for (let j = i + 1; j < list.length; j++) {
-          const a = list[i];
-          const b = list[j];
-          if (a.sala === b.sala) continue;
-          if (new Date(b.inicio).getTime() >= new Date(a.fin).getTime()) break;
-          if (hasOverlap(a, b)) pairs.push([a, b]);
-        }
-      }
-      return pairs;
-    }
-
     function durationMin(s) {
       return Math.round((new Date(s.fin).getTime() - new Date(s.inicio).getTime()) / 60_000);
     }
@@ -220,18 +181,7 @@ const speakers = speakersData as Speaker[];
         .replace(/'/g, '&#39;');
     }
 
-    function speakersInline(sesion, max = 2) {
-      const byId = new Map(speakersData.map((s) => [s.id, s]));
-      const names = sesion.speakers
-        .map((id) => byId.get(id))
-        .filter(Boolean)
-        .map((sp) => sp.nombre);
-      if (names.length === 0) return '';
-      if (names.length <= max) return names.join(' · ');
-      return `${names.slice(0, max).join(' · ')} +${names.length - max}`;
-    }
-
-    function renderStats(list, pairs) {
+    function renderStats(list) {
       const count = list.length;
       const totalMin = list.reduce((acc, s) => acc + durationMin(s), 0);
       const spread = count > 0 ? fmtRange(list[0].inicio, list[list.length - 1].fin) : '--';
@@ -247,77 +197,6 @@ const speakers = speakersData as Speaker[];
       } else {
         spreadLi.hidden = true;
       }
-
-      const conflictLi = document.getElementById('stat-conflict-li');
-      const conflictEl = document.getElementById('stat-conflict');
-      if (pairs.length > 0) {
-        conflictEl.textContent = String(pairs.length);
-        conflictLi.hidden = false;
-      } else {
-        conflictLi.hidden = true;
-      }
-    }
-
-    function renderConflictSection(pairs) {
-      const section = document.getElementById('conflict-section');
-      const title = document.getElementById('conflict-title');
-      const list = document.getElementById('conflict-list');
-      if (!section || !list || !title) return;
-
-      if (pairs.length === 0) {
-        section.hidden = true;
-        return;
-      }
-
-      section.hidden = false;
-      title.textContent = `${pairs.length} ${pairs.length === 1 ? 'conflicto' : 'conflictos'}`;
-      list.innerHTML = '';
-
-      pairs.forEach((pair) => {
-        const [a, b] = pair;
-        const wrap = document.createElement('div');
-        wrap.className = 'conflict-pair';
-        wrap.innerHTML = `
-          <div class="cp-time">${escapeHtml(fmtRange(a.inicio, a.fin))} vs ${escapeHtml(fmtRange(b.inicio, b.fin))}</div>
-          <div class="cp-grid">
-            ${renderConflictCard(a)}
-            <div class="cp-vs" aria-hidden="true"><span>vs</span></div>
-            ${renderConflictCard(b)}
-          </div>
-        `;
-        list.appendChild(wrap);
-      });
-
-      list.querySelectorAll('[data-keep]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const keep = btn.dataset.keep;
-          const drop = btn.dataset.drop;
-          if (!keep || !drop) return;
-          const next = getStored().filter((x) => x !== drop);
-          setStored(next);
-          renderAll(next);
-        });
-      });
-    }
-
-    function renderConflictCard(s) {
-      const speakers = speakersInline(s, 2);
-      const otherId = s.id;
-      return `
-        <article class="cp-card sala-${s.sala}">
-          <header class="cpc-head">
-            <span class="cpc-sala">${escapeHtml(SALA_NOMBRE_JS[s.sala])}</span>
-            <span class="cpc-time">${escapeHtml(fmtRange(s.inicio, s.fin))}</span>
-          </header>
-          <a class="cpc-title-link" href="/sesion/${escapeHtml(s.id)}">
-            <h3 class="cpc-title">${escapeHtml(s.titulo)}</h3>
-          </a>
-          ${speakers ? `<p class="cpc-speakers">${escapeHtml(speakers)}</p>` : ''}
-          <button class="cpc-keep" data-keep="${escapeHtml(s.id)}" data-drop="__OTHER__:${escapeHtml(otherId)}" type="button">
-            Me quedo con esta →
-          </button>
-        </article>
-      `;
     }
 
     function timeToMin(iso) {
@@ -344,13 +223,6 @@ const speakers = speakersData as Speaker[];
       const maxT = Math.ceil(Math.max(...ends) / 60) * 60;
       const height = (maxT - minT) * PX_PER_MIN;
 
-      const pairs = findConflictPairs(list);
-      const inConflict = new Set();
-      for (const [a, b] of pairs) {
-        inConflict.add(a.id);
-        inConflict.add(b.id);
-      }
-
       const hours = [];
       for (let h = minT; h <= maxT; h += 60) hours.push(h);
 
@@ -371,9 +243,8 @@ const speakers = speakersData as Speaker[];
             .map((s) => {
               const top = (timeToMin(s.inicio) - minT) * PX_PER_MIN;
               const slotH = Math.max(30, (timeToMin(s.fin) - timeToMin(s.inicio)) * PX_PER_MIN);
-              const confCls = inConflict.has(s.id) ? ' is-conflict' : '';
               return `
-                <a class="mc-slot sala-${sala}${confCls}"
+                <a class="mc-slot sala-${sala}"
                    href="/sesion/${escapeHtml(s.id)}"
                    style="top:${top}px;height:${slotH}px;"
                    aria-label="${escapeHtml(s.titulo)}, ${escapeHtml(SALA_NOMBRE_JS[sala])}, ${escapeHtml(s.inicio.slice(11, 16))} a ${escapeHtml(s.fin.slice(11, 16))}">
@@ -412,9 +283,7 @@ const speakers = speakersData as Speaker[];
 
     function renderAll(ids) {
       const list = favSesiones(ids);
-      const pairs = findConflictPairs(list);
-      renderStats(list, pairs);
-      renderConflictSection(pairs);
+      renderStats(list);
       renderMiniCalendar(list);
       renderEmpty(ids);
     }
@@ -739,15 +608,6 @@ const speakers = speakersData as Speaker[];
     letter-spacing: 0.08em;
   }
 
-  .stat-conflict {
-    background: rgba(251, 74, 168, 0.08);
-    border-color: var(--magenta);
-  }
-
-  .stat-conflict .stat-num {
-    color: var(--magenta);
-  }
-
   /* EMPTY STATE */
   .empty-state {
     padding: var(--s-7) 0;
@@ -800,247 +660,6 @@ const speakers = speakersData as Speaker[];
     color: var(--fg-muted);
     margin: 0 0 var(--s-5);
     line-height: 1.5;
-  }
-
-  /* CONFLICT SECTION */
-  .conflict-section {
-    padding: var(--s-5) 0;
-    background: linear-gradient(180deg, rgba(251, 74, 168, 0.04) 0%, transparent 100%);
-  }
-
-  .cs-head {
-    margin-bottom: var(--s-4);
-  }
-
-  .cs-tag {
-    display: inline-block;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--magenta);
-    background: rgba(251, 74, 168, 0.12);
-    border: 1px solid var(--magenta);
-    padding: 3px var(--s-2);
-    border-radius: var(--r-pill);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: var(--s-3);
-  }
-
-  .cs-title {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: var(--t-xl);
-    letter-spacing: -0.025em;
-    color: var(--fg);
-    margin: 0 0 var(--s-2);
-  }
-
-  .cs-sub {
-    font-family: var(--font-body);
-    font-size: var(--t-sm);
-    color: var(--fg-muted);
-    margin: 0;
-    line-height: 1.4;
-  }
-
-  .conflict-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--s-5);
-  }
-
-  .conflict-pair {
-    background: var(--bg-card);
-    border: 1px solid var(--magenta);
-    border-radius: var(--r-lg);
-    padding: var(--s-4);
-  }
-
-  .cp-time {
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    color: var(--magenta);
-    text-align: center;
-    margin-bottom: var(--s-3);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.02em;
-  }
-
-  .cp-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--s-3);
-  }
-
-  .cp-vs {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-  }
-
-  .cp-vs::before,
-  .cp-vs::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 50%;
-    height: 1px;
-    background: var(--hair-bright);
-  }
-
-  .cp-vs span {
-    position: relative;
-    z-index: 1;
-    background: var(--bg-card);
-    color: var(--fg-muted);
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    padding: 0 var(--s-2);
-  }
-
-  @media (min-width: 600px) {
-    .cp-grid {
-      grid-template-columns: 1fr 40px 1fr;
-      align-items: stretch;
-    }
-
-    .cp-vs::before,
-    .cp-vs::after {
-      left: 50%;
-      right: auto;
-      top: 0;
-      bottom: 0;
-      width: 1px;
-      height: auto;
-    }
-
-    .cp-vs::before {
-      bottom: calc(50% + 14px);
-    }
-
-    .cp-vs::after {
-      top: calc(50% + 14px);
-    }
-  }
-
-  .cp-card {
-    background: var(--bg);
-    border: 1px solid var(--hair);
-    border-radius: var(--r-md);
-    padding: var(--s-3);
-    display: flex;
-    flex-direction: column;
-    gap: var(--s-2);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .cp-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 3px;
-    background: currentColor;
-  }
-
-  .cp-card.sala-pacifico {
-    color: var(--sala-pacifico);
-  }
-  .cp-card.sala-atlantico-b {
-    color: var(--sala-atlantico-b);
-  }
-  .cp-card.sala-atlantico-c {
-    color: var(--sala-atlantico-c);
-  }
-
-  .cpc-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-left: var(--s-2);
-  }
-
-  .cpc-sala {
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    font-weight: 700;
-    color: currentColor;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  .cpc-time {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--fg-muted);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .cpc-title-link {
-    text-decoration: none;
-    color: inherit;
-    padding-left: var(--s-2);
-  }
-
-  .cpc-title {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: var(--t-md);
-    letter-spacing: -0.02em;
-    line-height: 1.2;
-    color: var(--fg);
-    margin: 0;
-  }
-
-  .cpc-title-link:hover .cpc-title {
-    color: var(--cyan);
-  }
-
-  .cpc-speakers {
-    font-family: var(--font-body);
-    font-size: var(--t-xs);
-    color: var(--fg-soft);
-    margin: 0;
-    padding-left: var(--s-2);
-    line-height: 1.4;
-  }
-
-  .cpc-keep {
-    margin-top: auto;
-    background: var(--bg-card);
-    border: 1px solid currentColor;
-    color: currentColor;
-    font-family: var(--font-body);
-    font-weight: 600;
-    font-size: var(--t-xs);
-    padding: var(--s-2) var(--s-3);
-    border-radius: var(--r-pill);
-    cursor: pointer;
-    min-height: 36px;
-    margin-left: var(--s-2);
-    margin-right: var(--s-2);
-    text-align: center;
-    transition: all var(--m-fast) var(--m-ease);
-  }
-
-  .cpc-keep:hover {
-    background: currentColor;
-  }
-
-  .cp-card.sala-pacifico .cpc-keep:hover {
-    color: var(--bg);
-  }
-  .cp-card.sala-atlantico-b .cpc-keep:hover {
-    color: var(--bg);
-  }
-  .cp-card.sala-atlantico-c .cpc-keep:hover {
-    color: var(--bg);
   }
 
   /* MINI CALENDAR — wrapper (scoped) */
@@ -1394,11 +1013,6 @@ const speakers = speakersData as Speaker[];
   .mc-slot.sala-atlantico-c {
     background: rgba(251, 74, 168, 0.18);
     border-color: rgba(251, 74, 168, 0.45);
-  }
-
-  .mc-slot.is-conflict {
-    box-shadow: 0 0 0 1.5px var(--magenta), 0 0 14px var(--magenta-glow);
-    z-index: 2;
   }
 
   .mc-slot-time {

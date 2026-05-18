@@ -13,7 +13,7 @@
 bun install
 bun run dev      # http://localhost:4321
 bun run build    # dist/ static
-bun run test     # 56 vitest tests
+bun run test     # vitest (now.ts + url-favorites.ts)
 bun run check    # astro type check (debe estar 0/0/0)
 ```
 
@@ -33,7 +33,7 @@ bun run check    # astro type check (debe estar 0/0/0)
 | `/` redirige siempre a `/ahora` | Default consistente |
 | `/ahora` muestra timeline completo pre-evento (no empty state) | Decisión explícita del user |
 | `/mi-dia` usa mini-calendario (no lista) | Opción C accepted en UX review |
-| Conflict resolver side-by-side en `/mi-dia` | Pieza fuerte de UX, no cambiar |
+| Sin conflict resolver · "guardar = está en mi calendar" | User cut · simplificación |
 | Botón hero "Exportar a calendario" en `/mi-dia` | CTA principal |
 
 ## Paleta + tipografía (oficial aifi.lat)
@@ -78,7 +78,7 @@ Fuentes: **Bricolage Grotesque** (display) · **DM Sans** (body) · **Inter Tigh
 
 ## Tests
 
-`tests/now.test.ts` · `tests/conflicts.test.ts` · `tests/url-favorites.test.ts` — 56 specs. **NO eliminar**. Si tocás `lib/now.ts` o `lib/conflicts.ts`, los tests son la red de seguridad.
+`tests/now.test.ts` · `tests/url-favorites.test.ts`. **NO eliminar**. Si tocás `lib/now.ts` o `lib/url-favorites.ts`, los tests son la red de seguridad.
 
 ## TODOs vivos · post-evento
 
