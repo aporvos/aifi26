@@ -206,12 +206,15 @@ const tipoLabel: Record<Sesion['tipo'], string> = {
         btn.classList.toggle('is-fav', has);
       }
 
-      btn.addEventListener('click', () => {
-        const stored = getStored();
-        const next = stored.includes(id) ? stored.filter((x) => x !== id) : [...stored, id];
-        setStored(next);
-        render();
-      });
+      if (btn.dataset.wired !== '1') {
+        btn.dataset.wired = '1';
+        btn.addEventListener('click', () => {
+          const stored = getStored();
+          const next = stored.includes(id) ? stored.filter((x) => x !== id) : [...stored, id];
+          setStored(next);
+          render();
+        });
+      }
 
       render();
     }
@@ -275,7 +278,8 @@ const tipoLabel: Record<Sesion['tipo'], string> = {
 
     function setupIcs() {
       const btn = document.getElementById('ics-btn');
-      if (!btn) return;
+      if (!btn || btn.dataset.wired === '1') return;
+      btn.dataset.wired = '1';
       btn.addEventListener('click', downloadIcs);
     }
 
@@ -283,6 +287,8 @@ const tipoLabel: Record<Sesion['tipo'], string> = {
       const btn = document.getElementById('share-btn');
       const status = document.getElementById('actions-status');
       if (!btn || !status) return;
+      if (btn.dataset.wired === '1') return;
+      btn.dataset.wired = '1';
 
       btn.addEventListener('click', async () => {
         const url = `${window.location.origin}/sesion/${sesionData.id}`;
