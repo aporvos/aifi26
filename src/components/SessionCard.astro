@@ -164,7 +164,6 @@ const isInteractive = !['break', 'acreditacion'].includes(sesion.tipo);
         <button class="cb-btn" data-ics data-id={sesion.id} type="button">
           + Calendario
         </button>
-        <a class="cb-btn cb-link" href={`/sesion/${sesion.id}`}>Ver completa →</a>
       </footer>
 
       <p class="cb-status" data-status></p>
@@ -568,17 +567,6 @@ const isInteractive = !['break', 'acreditacion'].includes(sesion.tipo);
     animation: favPulse 320ms var(--m-spring);
   }
 
-  .cb-link {
-    background: var(--cyan);
-    border-color: var(--cyan);
-    color: var(--bg);
-  }
-
-  .cb-link:hover {
-    background: var(--mint);
-    border-color: var(--mint);
-    color: var(--bg);
-  }
 
   .cb-status {
     font-family: var(--font-mono);
